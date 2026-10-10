@@ -1,0 +1,14 @@
+{
+  "task": "profile-facts-v1",
+  "prompt_version": "profile-facts-v1",
+  "output": {
+    "facts": [
+      {
+        "type": "work",
+        "title": "示例公司",
+        "content": "在示例公司负责维护订单服务。",
+        "source_quote": "在示例公司负责维护订单服务。"
+      }
+    ]
+  }
+}

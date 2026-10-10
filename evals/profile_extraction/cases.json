@@ -1,0 +1,152 @@
+[
+  {
+    "id": "education",
+    "raw_input": "在示例大学获得计算机学士学位。",
+    "expected": {
+      "facts": [
+        {
+          "type": "education",
+          "title": "示例大学",
+          "content": "在示例大学获得计算机学士学位。",
+          "source_quote": "在示例大学获得计算机学士学位。"
+        }
+      ]
+    },
+    "review_note": "Synthetic explicit source only; no inferred dates, role or metrics."
+  },
+  {
+    "id": "work",
+    "raw_input": "在示例公司负责维护订单服务。",
+    "expected": {
+      "facts": [
+        {
+          "type": "work",
+          "title": "示例公司",
+          "content": "在示例公司负责维护订单服务。",
+          "source_quote": "在示例公司负责维护订单服务。"
+        }
+      ]
+    },
+    "review_note": "Synthetic explicit source only; no inferred dates, role or metrics."
+  },
+  {
+    "id": "project",
+    "raw_input": "为示例项目实现缓存。",
+    "expected": {
+      "facts": [
+        {
+          "type": "project",
+          "title": "示例项目",
+          "content": "为示例项目实现缓存。",
+          "source_quote": "为示例项目实现缓存。"
+        }
+      ]
+    },
+    "review_note": "Synthetic explicit source only; no inferred dates, role or metrics."
+  },
+  {
+    "id": "skill",
+    "raw_input": "使用 Python。",
+    "expected": {
+      "facts": [
+        {
+          "type": "skill",
+          "title": "Python",
+          "content": "使用 Python。",
+          "source_quote": "使用 Python。"
+        }
+      ]
+    },
+    "review_note": "Synthetic explicit source only; no inferred dates, role or metrics."
+  },
+  {
+    "id": "numbers",
+    "raw_input": "将延迟从 200ms 降到 120ms。",
+    "expected": {
+      "facts": [
+        {
+          "type": "work",
+          "title": "性能优化",
+          "content": "将延迟从 200ms 降到 120ms。",
+          "source_quote": "将延迟从 200ms 降到 120ms。"
+        }
+      ]
+    },
+    "review_note": "Synthetic explicit source only; no inferred dates, role or metrics."
+  },
+  {
+    "id": "mixed",
+    "raw_input": "使用 TypeScript、React 和 PostgreSQL 开发库存服务。",
+    "expected": {
+      "facts": [
+        {
+          "type": "project",
+          "title": "库存服务",
+          "content": "使用 TypeScript、React 和 PostgreSQL 开发库存服务。",
+          "source_quote": "使用 TypeScript、React 和 PostgreSQL 开发库存服务。"
+        }
+      ]
+    },
+    "review_note": "Synthetic explicit source only; no inferred dates, role or metrics."
+  },
+  {
+    "id": "missing",
+    "raw_input": "参与过一个内部工具，未提供公司和日期。",
+    "expected": {
+      "facts": [
+        {
+          "type": "other",
+          "title": "未注明信息",
+          "content": "参与过一个内部工具，未提供公司和日期。",
+          "source_quote": "参与过一个内部工具，未提供公司和日期。"
+        }
+      ]
+    },
+    "review_note": "Synthetic explicit source only; no inferred dates, role or metrics."
+  },
+  {
+    "id": "ambiguous",
+    "raw_input": "有时帮同事看看代码，未说明管理职责。",
+    "expected": {
+      "facts": [
+        {
+          "type": "other",
+          "title": "协助同事",
+          "content": "有时帮同事看看代码，未说明管理职责。",
+          "source_quote": "有时帮同事看看代码，未说明管理职责。"
+        }
+      ]
+    },
+    "review_note": "Synthetic explicit source only; no inferred dates, role or metrics."
+  },
+  {
+    "id": "education-dates",
+    "raw_input": "2020 至 2024 年在示例学院学习数学。",
+    "expected": {
+      "facts": [
+        {
+          "type": "education",
+          "title": "示例学院",
+          "content": "2020 至 2024 年在示例学院学习数学。",
+          "source_quote": "2020 至 2024 年在示例学院学习数学。"
+        }
+      ]
+    },
+    "review_note": "Synthetic explicit source only; no inferred dates, role or metrics."
+  },
+  {
+    "id": "percentage",
+    "raw_input": "将错误率从 2.5% 降到 1%。",
+    "expected": {
+      "facts": [
+        {
+          "type": "work",
+          "title": "错误率",
+          "content": "将错误率从 2.5% 降到 1%。",
+          "source_quote": "将错误率从 2.5% 降到 1%。"
+        }
+      ]
+    },
+    "review_note": "Synthetic explicit source only; no inferred dates, role or metrics."
+  }
+]

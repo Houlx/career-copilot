@@ -1,0 +1,14 @@
+{
+  "task": "profile-normalize-v1",
+  "prompt_version": "profile-normalize-v1",
+  "output": {
+    "entries": [
+      {
+        "source_index": 0,
+        "type": "other",
+        "title": "未注明信息",
+        "content": "参与过一个内部工具，未提供公司和日期。"
+      }
+    ]
+  }
+}

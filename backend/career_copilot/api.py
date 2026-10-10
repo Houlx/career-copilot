@@ -8,10 +8,13 @@ from pydantic import BaseModel, ConfigDict, Field
 from .config import Settings
 from .database import Database
 from .errors import CopilotError, ErrorCode, WorkflowError
+from .models.profile import NormalizedProfile, ProfileFacts
 from .models.prompts import PROMPTS, DiagnosticResult
 from .models.router import ModelRouter
+from .profile_store import ProfileStore
 from .tracing import RunTrace
 from .workflows.dummy import build_dummy_graph
+from .workflows.profile import build_profile_graph
 
 
 class DummyRequest(BaseModel):
@@ -25,10 +28,24 @@ class ReplayRequest(BaseModel):
     payload: dict = Field(default_factory=dict)
 
 
+class VersionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    expected_version: int = Field(ge=0)
+
+
+class RawProfileRequest(VersionRequest):
+    raw_input: str = Field(min_length=1, max_length=20000)
+
+
+class EditProfileRequest(VersionRequest):
+    profile: NormalizedProfile
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings()
     db = Database(settings.database_path)
     router = ModelRouter(settings)
+    profiles = ProfileStore(db)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -49,12 +66,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         body = {"error_code": exc.code.value, "message": "操作失败，请查看运行记录。"}
         if isinstance(exc, WorkflowError):
             body["run_id"] = exc.run_id
-        status = 404 if exc.code == ErrorCode.REPLAY_NOT_FOUND else 500
+        status = (
+            404
+            if exc.code in {ErrorCode.REPLAY_NOT_FOUND, ErrorCode.PROFILE_NOT_FOUND}
+            else 409
+            if exc.code == ErrorCode.PROFILE_CONFLICT
+            else 422
+            if exc.code == ErrorCode.PROFILE_VALIDATION_FAILED
+            else 500
+        )
         return JSONResponse(status_code=status, content=body)
 
     @app.get("/api/health")
     def health():
-        return {"status": "ok", "phase": 1}
+        return {"status": "ok", "phase": 2}
 
     @app.get("/api/settings")
     def read_settings():
@@ -89,6 +114,33 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         return {"run_id": trace.run_id, "state": state}
 
+    @app.get("/api/profile")
+    def get_profile():
+        return {"profile": profiles.get()}
+
+    @app.post("/api/profile/raw")
+    def save_raw_profile(body: RawProfileRequest):
+        if not body.raw_input.strip():
+            raise CopilotError(ErrorCode.PROFILE_VALIDATION_FAILED)
+        return {"profile": profiles.save_raw(body.raw_input, body.expected_version)}
+
+    @app.post("/api/profile/normalize")
+    def normalize_profile(body: VersionRequest):
+        trace = RunTrace(db, settings, "profile_workflow", "profile-v1")
+        trace.execute(
+            build_profile_graph(trace, profiles, router),
+            {"expected_version": body.expected_version},
+        )
+        return {"run_id": trace.run_id, "profile": profiles.get()}
+
+    @app.put("/api/profile")
+    def edit_profile(body: EditProfileRequest):
+        return {"profile": profiles.edit(body.profile, body.expected_version)}
+
+    @app.post("/api/profile/confirm")
+    def confirm_profile(body: VersionRequest):
+        return {"profile": profiles.confirm(body.expected_version)}
+
     debug_deps = [Depends(development_only)]
 
     @app.get("/debug/runs", dependencies=debug_deps, include_in_schema=False)
@@ -111,13 +163,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.post("/api/debug/replay", dependencies=debug_deps)
     def replay_node(body: ReplayRequest):
-        # Diagnostic only in Phase 1. Forced replay even when AI_MODE=live.
-        # No workflow or business persistence: independent input → validated output.
-        if body.task != "diagnostic":
-            raise HTTPException(status_code=422, detail="Unsupported Phase 1 task")
+        # Forced replay: independent execution without business or trace writes.
+        tasks = {
+            "diagnostic": ("judge_model", DiagnosticResult),
+            "profile-facts-v1": ("judge_model", ProfileFacts),
+            "profile-normalize-v1": ("generation_model", NormalizedProfile),
+        }
+        if body.task not in tasks:
+            raise HTTPException(status_code=422, detail="Unsupported task")
         replay_router = ModelRouter(settings, replay_only=True)
-        return replay_router.judge_model.invoke(
-            body.task, body.payload, DiagnosticResult
-        ).model_dump()
+        role, schema = tasks[body.task]
+        return getattr(replay_router, role).invoke(body.task, body.payload, schema).model_dump()
 
     return app

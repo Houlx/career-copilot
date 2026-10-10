@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from ..config import ModelConfig, Settings
 from ..errors import CopilotError, ErrorCode
+from .profile import NormalizedProfile, ProfileFacts
 from .prompts import PROMPTS, DiagnosticResult, PromptSpec
 
 T = TypeVar("T", bound=BaseModel)
@@ -73,10 +74,37 @@ class RoleModel:
             payload_observer({"prompt": spec.system, "input": payload})
         try:
             if self.mode == "fake":
-                # Deliberately allowlisted. Never synthesize user facts in fake mode.
-                if task != "diagnostic" or schema is not DiagnosticResult:
+                # Offline identity fixtures: preserve supplied text, never invent user facts.
+                if task == "diagnostic" and schema is DiagnosticResult:
+                    value = {"message": "Provider connection verified"}
+                elif task == "profile-facts-v1" and schema is ProfileFacts:
+                    raw = payload["raw_input"]
+                    value = {
+                        "facts": [
+                            {
+                                "type": "other",
+                                "title": "原始资料",
+                                "content": raw,
+                                "source_quote": raw,
+                            }
+                        ]
+                    }
+                elif task == "profile-normalize-v1" and schema is NormalizedProfile:
+                    facts = ProfileFacts.model_validate(payload)
+                    value = {
+                        "entries": [
+                            {
+                                "source_index": i,
+                                "type": f.type,
+                                "title": f.title,
+                                "content": f.content,
+                            }
+                            for i, f in enumerate(facts.facts)
+                        ]
+                    }
+                else:
                     raise CopilotError(ErrorCode.MODEL_OUTPUT_INVALID)
-                output = schema.model_validate({"message": "Provider connection verified"})
+                output = schema.model_validate(value)
             elif self.mode == "replay":
                 path = self.replay_dir / replay_key(task, spec.version, payload)
                 try:

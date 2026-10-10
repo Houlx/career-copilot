@@ -1,0 +1,14 @@
+{
+  "task": "profile-facts-v1",
+  "prompt_version": "profile-facts-v1",
+  "output": {
+    "facts": [
+      {
+        "type": "other",
+        "title": "协助同事",
+        "content": "有时帮同事看看代码，未说明管理职责。",
+        "source_quote": "有时帮同事看看代码，未说明管理职责。"
+      }
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "task": "profile-normalize-v1",
+  "prompt_version": "profile-normalize-v1",
+  "output": {
+    "entries": [
+      {
+        "source_index": 0,
+        "type": "work",
+        "title": "示例公司",
+        "content": "在示例公司负责维护订单服务。"
+      }
+    ]
+  }
+}

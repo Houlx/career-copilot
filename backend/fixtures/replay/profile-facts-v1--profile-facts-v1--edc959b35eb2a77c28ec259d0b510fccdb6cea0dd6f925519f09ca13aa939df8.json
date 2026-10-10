@@ -1,0 +1,14 @@
+{
+  "task": "profile-facts-v1",
+  "prompt_version": "profile-facts-v1",
+  "output": {
+    "facts": [
+      {
+        "type": "work",
+        "title": "错误率",
+        "content": "将错误率从 2.5% 降到 1%。",
+        "source_quote": "将错误率从 2.5% 降到 1%。"
+      }
+    ]
+  }
+}

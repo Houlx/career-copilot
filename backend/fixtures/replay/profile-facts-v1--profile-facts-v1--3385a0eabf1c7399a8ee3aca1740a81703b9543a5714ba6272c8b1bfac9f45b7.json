@@ -1,0 +1,14 @@
+{
+  "task": "profile-facts-v1",
+  "prompt_version": "profile-facts-v1",
+  "output": {
+    "facts": [
+      {
+        "type": "other",
+        "title": "未注明信息",
+        "content": "参与过一个内部工具，未提供公司和日期。",
+        "source_quote": "参与过一个内部工具，未提供公司和日期。"
+      }
+    ]
+  }
+}

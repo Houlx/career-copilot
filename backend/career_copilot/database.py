@@ -25,7 +25,33 @@ CREATE TABLE IF NOT EXISTS node_traces (
     PRIMARY KEY (run_id, sequence)
 );
 CREATE INDEX IF NOT EXISTS runs_started ON workflow_runs(started_at DESC);
-PRAGMA user_version = 1;
+CREATE TABLE IF NOT EXISTS career_profile (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    raw_input TEXT NOT NULL,
+    raw_history TEXT NOT NULL,
+    extracted_facts TEXT,
+    normalized_raw_input TEXT,
+    ai_normalized_profile TEXT,
+    user_edited_profile TEXT,
+    confirmed INTEGER NOT NULL DEFAULT 0,
+    profile_version INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    confirmed_at TEXT,
+    last_confirmed_profile TEXT
+);
+CREATE TABLE IF NOT EXISTS career_evidence (
+    id TEXT PRIMARY KEY,
+    profile_version INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    raw_content TEXT NOT NULL,
+    normalized_content TEXT NOT NULL,
+    active INTEGER NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+PRAGMA user_version = 2;
 """
 
 
@@ -47,6 +73,8 @@ class Database:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as conn:
             conn.execute("PRAGMA journal_mode = WAL")
+            if conn.execute("PRAGMA user_version").fetchone()[0] > 2:
+                raise CopilotError(ErrorCode.PERSISTENCE_FAILED)
             conn.executescript(SCHEMA)
 
     def start_run(self, run: dict):

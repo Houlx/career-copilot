@@ -1,0 +1,14 @@
+{
+  "task": "profile-facts-v1",
+  "prompt_version": "profile-facts-v1",
+  "output": {
+    "facts": [
+      {
+        "type": "education",
+        "title": "示例大学",
+        "content": "在示例大学获得计算机学士学位。",
+        "source_quote": "在示例大学获得计算机学士学位。"
+      }
+    ]
+  }
+}

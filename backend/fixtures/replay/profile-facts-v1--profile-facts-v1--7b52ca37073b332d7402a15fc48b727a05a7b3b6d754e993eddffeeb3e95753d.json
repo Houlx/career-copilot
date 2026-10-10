@@ -1,0 +1,14 @@
+{
+  "task": "profile-facts-v1",
+  "prompt_version": "profile-facts-v1",
+  "output": {
+    "facts": [
+      {
+        "type": "skill",
+        "title": "Python",
+        "content": "使用 Python。",
+        "source_quote": "使用 Python。"
+      }
+    ]
+  }
+}

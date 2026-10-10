@@ -54,7 +54,9 @@ beforeEach(() => {
               ? detail
               : url === '/api/debug/replay'
                 ? { output: { message: 'Provider connection verified' } }
-                : { runs: [] };
+                : url === '/api/profile'
+                  ? { profile: null }
+                  : { runs: [] };
       return { ok: true, json: async () => value };
     }),
   );
@@ -102,6 +104,7 @@ describe('Phase 1 shell', () => {
     const fetchMock = vi.mocked(fetch);
     render(<App />);
     const button = await screen.findByRole('button', { name: '运行诊断 →' });
+    await screen.findByText('Not started');
     fetchMock.mockResolvedValueOnce({
       ok: false,
       json: async () => ({ error_code: 'WORKFLOW_FAILED' }),
@@ -114,7 +117,8 @@ describe('Phase 1 shell', () => {
   it('does not start a workflow on initial load', async () => {
     render(<App />);
     await screen.findByText('让每一步，都有依据。');
-    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(fetch).mock.calls.every(([, options]) => options === undefined)).toBe(true);
     expect(fetch).toHaveBeenCalledWith('/api/settings', undefined);
   });
 });

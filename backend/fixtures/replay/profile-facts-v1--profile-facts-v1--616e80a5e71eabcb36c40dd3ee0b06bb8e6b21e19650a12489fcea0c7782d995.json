@@ -1,0 +1,14 @@
+{
+  "task": "profile-facts-v1",
+  "prompt_version": "profile-facts-v1",
+  "output": {
+    "facts": [
+      {
+        "type": "project",
+        "title": "示例项目",
+        "content": "为示例项目实现缓存。",
+        "source_quote": "为示例项目实现缓存。"
+      }
+    ]
+  }
+}

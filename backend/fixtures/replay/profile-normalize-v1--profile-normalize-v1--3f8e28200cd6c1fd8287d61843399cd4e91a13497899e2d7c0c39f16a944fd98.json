@@ -1,0 +1,14 @@
+{
+  "task": "profile-normalize-v1",
+  "prompt_version": "profile-normalize-v1",
+  "output": {
+    "entries": [
+      {
+        "source_index": 0,
+        "type": "project",
+        "title": "示例项目",
+        "content": "为示例项目实现缓存。"
+      }
+    ]
+  }
+}

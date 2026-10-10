@@ -1,0 +1,14 @@
+{
+  "task": "profile-facts-v1",
+  "prompt_version": "profile-facts-v1",
+  "output": {
+    "facts": [
+      {
+        "type": "project",
+        "title": "库存服务",
+        "content": "使用 TypeScript、React 和 PostgreSQL 开发库存服务。",
+        "source_quote": "使用 TypeScript、React 和 PostgreSQL 开发库存服务。"
+      }
+    ]
+  }
+}

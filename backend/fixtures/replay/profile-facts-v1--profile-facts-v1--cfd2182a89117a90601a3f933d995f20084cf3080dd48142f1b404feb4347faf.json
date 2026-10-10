@@ -1,0 +1,14 @@
+{
+  "task": "profile-facts-v1",
+  "prompt_version": "profile-facts-v1",
+  "output": {
+    "facts": [
+      {
+        "type": "education",
+        "title": "示例学院",
+        "content": "2020 至 2024 年在示例学院学习数学。",
+        "source_quote": "2020 至 2024 年在示例学院学习数学。"
+      }
+    ]
+  }
+}

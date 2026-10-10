@@ -40,13 +40,13 @@ export interface DummyResponse {
   run_id: string;
   state: { message: string; counter: number; result: string };
 }
-export async function api<T>(path: string, body?: unknown): Promise<T> {
+export async function api<T>(path: string, body?: unknown, method = 'POST'): Promise<T> {
   const response = await fetch(
     `/api${path}`,
     body === undefined
       ? undefined
       : {
-          method: 'POST',
+          method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
         },
@@ -56,4 +56,26 @@ export async function api<T>(path: string, body?: unknown): Promise<T> {
     throw new Error(error.error_code ?? error.detail ?? `HTTP ${response.status}`);
   }
   return response.json() as Promise<T>;
+}
+
+export interface ProfileEntry {
+  source_index: number;
+  type: 'education' | 'work' | 'project' | 'skill' | 'other';
+  title: string;
+  content: string;
+}
+export interface CareerProfile {
+  raw_input: string;
+  ai_normalized_profile: { entries: ProfileEntry[] } | null;
+  user_edited_profile: { entries: ProfileEntry[] } | null;
+  effective_profile: { entries: ProfileEntry[] } | null;
+  confirmed: boolean;
+  profile_version: number;
+  updated_at: string;
+  state: 'raw_saved' | 'draft_ready' | 'edited' | 'confirmed';
+  evidence: { id: string; title: string; type: string }[];
+}
+export interface ProfileResponse {
+  profile: CareerProfile | null;
+  run_id?: string;
 }

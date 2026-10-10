@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ProfilePage, ProfileSummary } from './Profile';
 import { api, type DummyResponse, type Run, type RunDetail, type Settings } from './api';
 
 const navigation = [
@@ -36,8 +37,9 @@ function Dashboard({ go, debugEnabled }: { go: (path: string) => void; debugEnab
       <h1>让每一步，都有依据。</h1>
       <p className="lead">从真实职业经历出发，理解岗位要求，准备属于你的下一步。</p>
       <div className="hero-note">
-        <span className="dot" /> Phase 1 · 项目骨架与可观测性基础已就绪
+        <span className="dot" /> Phase 2 · Career Profile 已就绪
       </div>
+      <ProfileSummary />
       <div className="steps">
         {[
           ['01', '整理职业资料', '提取事实，编辑并确认', 'Phase 2'],
@@ -48,7 +50,9 @@ function Dashboard({ go, debugEnabled }: { go: (path: string) => void; debugEnab
             <span className="step-number">{n}</span>
             <h2>{title}</h2>
             <p>{text}</p>
-            <span className="tag">{phase} · 尚未实现</span>
+            <span className="tag">
+              {phase} · {phase === 'Phase 2' ? '已开放' : '尚未实现'}
+            </span>
           </article>
         ))}
       </div>
@@ -152,6 +156,7 @@ function DebugRuns({ path, go }: { path: string; go: (path: string) => void }) {
   const [revision, setRevision] = useState(0);
   const [replay, setReplay] = useState<unknown>();
   const [replaying, setReplaying] = useState(false);
+  const [replayTask, setReplayTask] = useState('diagnostic');
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -183,7 +188,19 @@ function DebugRuns({ path, go }: { path: string; go: (path: string) => void }) {
     setError('');
     setReplay(undefined);
     try {
-      setReplay(await api('/debug/replay', { task: 'diagnostic', payload: {} }));
+      const fact = {
+        type: 'skill',
+        title: 'Python',
+        content: '使用 Python。',
+        source_quote: '使用 Python。',
+      };
+      const payload =
+        replayTask === 'profile-facts-v1'
+          ? { raw_input: '使用 Python。' }
+          : replayTask === 'profile-normalize-v1'
+            ? { facts: [fact] }
+            : {};
+      setReplay(await api('/debug/replay', { task: replayTask, payload }));
     } catch (e) {
       setError(String(e));
     } finally {
@@ -318,9 +335,19 @@ function DebugRuns({ path, go }: { path: string; go: (path: string) => void }) {
       )}
       <section className="card">
         <h2>独立 AI Node Replay</h2>
-        <p>读取 diagnostic-v1 的固定输出并进行 Pydantic 校验。不会发起模型请求或修改用户数据。</p>
+        <p>
+          读取所选任务的 synthetic 固定输出并进行 Pydantic 校验。不会发起模型请求或修改用户数据。
+        </p>
+        <label>
+          Replay task
+          <select value={replayTask} onChange={(e) => setReplayTask(e.target.value)}>
+            <option value="diagnostic">diagnostic</option>
+            <option value="profile-facts-v1">profile-facts-v1</option>
+            <option value="profile-normalize-v1">profile-normalize-v1</option>
+          </select>
+        </label>
         <button disabled={replaying} onClick={() => void replayDiagnostic()}>
-          {replaying ? '读取中…' : 'Replay diagnostic'}
+          {replaying ? '读取中…' : `Replay ${replayTask}`}
         </button>
         {replay !== undefined && <Json value={replay} />}
       </section>
@@ -382,7 +409,7 @@ export default function App() {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <span className="dot" /> 本地个人工作空间<small>Phase 1 · v0.1.0</small>
+          <span className="dot" /> 本地个人工作空间<small>Phase 2 · v0.2.0</small>
         </div>
       </aside>
       <div className="workspace">
@@ -400,6 +427,12 @@ export default function App() {
             <p role="status">加载配置…</p>
           ) : path === '/' ? (
             <Dashboard go={go} debugEnabled={settings.debug_enabled} />
+          ) : path === '/profile' ? (
+            <ProfilePage
+              go={go}
+              fakeMode={settings.ai_mode === 'fake'}
+              debugEnabled={settings.debug_enabled}
+            />
           ) : path === '/settings' ? (
             <SettingsPage settings={settings} />
           ) : path.startsWith('/debug/runs') && settings.debug_enabled ? (
@@ -410,7 +443,7 @@ export default function App() {
               <h1>{placeholder}</h1>
               <section className="card">
                 <h2>将在后续阶段开放</h2>
-                <p>当前阶段专注项目骨架与可观测性基础。职业资料、岗位分析和简历生成尚未实现。</p>
+                <p>职业资料已开放。岗位分析和简历生成将在后续阶段实现。</p>
                 <button onClick={() => go('/')}>返回概览</button>
               </section>
             </>

@@ -9,6 +9,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--backend", default="http://127.0.0.1:8000")
     parser.add_argument("--frontend", default="http://127.0.0.1:5173")
+    parser.add_argument(
+        "--profile", action="store_true", help="Exercise Profile on an empty test DB"
+    )
     args = parser.parse_args()
     with (
         httpx.Client(base_url=args.backend, timeout=10) as backend,
@@ -16,7 +19,7 @@ def main():
     ):
         health = backend.get("/api/health")
         health.raise_for_status()
-        assert health.json() == {"status": "ok", "phase": 1}
+        assert health.json() == {"status": "ok", "phase": 2}
         config = frontend.get("/api/settings")
         config.raise_for_status()
         assert config.json()["ai_mode"] == "fake", "Run smoke check with AI_MODE=fake"
@@ -45,8 +48,57 @@ def main():
         assert response.json()["metadata"]["provider"] == "replay"
         assert response.json()["metadata"]["total_tokens"] == 0
         assert backend.get("/api/debug/runs").json() == before
+        if args.profile:
+            assert backend.get("/api/profile").json()["profile"] is None, (
+                "Use an empty temporary DB"
+            )
+
+            def post(path, payload):
+                result = frontend.post(path, json=payload)
+                result.raise_for_status()
+                return result.json()
+
+            raw = "使用 Python。"
+            saved = post("/api/profile/raw", {"raw_input": raw, "expected_version": 0})["profile"]
+            result = post("/api/profile/normalize", {"expected_version": saved["profile_version"]})
+            draft = result["profile"]
+            assert not draft["confirmed"] and draft["raw_input"] == raw
+            nodes = backend.get(f"/api/debug/runs/{result['run_id']}").json()["nodes"]
+            assert len(nodes) == 6
+            assert nodes[1]["ai"]["prompt_version"] == "profile-facts-v1"
+            assert nodes[3]["ai"]["prompt_version"] == "profile-normalize-v1"
+            assert all("debug_payload" not in n for n in nodes)
+            edited = {
+                "entries": [
+                    dict(
+                        draft["effective_profile"]["entries"][0],
+                        content="使用 Python 编写 synthetic 示例脚本。",
+                    )
+                ]
+            }
+            response = frontend.put("/api/profile", json={"expected_version": 2, "profile": edited})
+            response.raise_for_status()
+            assert response.json()["profile"]["raw_input"] == raw
+            confirmed = post("/api/profile/confirm", {"expected_version": 3})["profile"]
+            assert confirmed["confirmed"] and len(confirmed["evidence"]) == 1
+            assert post("/api/profile/confirm", {"expected_version": 4})["profile"] == confirmed
+            assert backend.get("/api/profile").json()["profile"] == confirmed
+            fact = {"type": "skill", "title": "Python", "content": raw, "source_quote": raw}
+            before = backend.get("/api/debug/runs").json()
+            for task, payload in [
+                ("profile-facts-v1", {"raw_input": raw}),
+                ("profile-normalize-v1", {"facts": [fact]}),
+            ]:
+                replay = post("/api/debug/replay", {"task": task, "payload": payload})
+                assert replay["metadata"]["provider"] == "replay"
+            assert backend.get("/api/debug/runs").json() == before
+            assert backend.get("/api/profile").json()["profile"] == confirmed
     print("PASS: HTTP → Vite proxy → FastAPI → LangGraph → SQLite → trace response")
-    print("PASS: debug UI shell / node diff / standalone replay; 0 model calls")
+    print("PASS: debug UI shell / node diff / standalone replay; 0 live API calls")
+    if args.profile:
+        print(
+            "PASS: Profile raw / normalize / edit / atomic confirm / stable evidence / task replays"
+        )
 
 
 if __name__ == "__main__":

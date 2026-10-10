@@ -1,0 +1,14 @@
+{
+  "task": "profile-normalize-v1",
+  "prompt_version": "profile-normalize-v1",
+  "output": {
+    "entries": [
+      {
+        "source_index": 0,
+        "type": "work",
+        "title": "性能优化",
+        "content": "将延迟从 200ms 降到 120ms。"
+      }
+    ]
+  }
+}
