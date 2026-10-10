@@ -14,6 +14,7 @@ from career_copilot.models.jobs import JobRequirements, Matching
 from career_copilot.models.profile import NormalizedProfile, ProfileFacts
 from career_copilot.models.prompts import PROMPTS, PromptSpec
 from career_copilot.models.resumes import ResumeDraft
+from career_copilot.models.revisions import ResumeRevisionProposal
 from career_copilot.models.router import AI_OBSERVER, AI_PAYLOAD_OBSERVER, ModelRouter, replay_key
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -60,6 +61,7 @@ def test_matching_contract():
         ("jd-requirements-v2", JobRequirements),
         ("matching-v1", Matching),
         ("resume-generation-v1", ResumeDraft),
+        ("resume-revision-agent-v1", ResumeRevisionProposal),
     ],
 )
 def test_all_structured_tasks_bound_and_injected(task, model):
@@ -122,7 +124,7 @@ def test_unstructured_prompt_unchanged():
         {"$ref": "https://invalid.example/schema"},
         {"$ref": "#/$defs/Missing"},
         {"$defs": {"Loop": {"$ref": "#/$defs/Loop"}}, "$ref": "#/$defs/Loop"},
-        {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        {"oneOf": [{"type": "string"}, {"type": "null"}]},
         {"type": "object", "unsupportedConstraint": True},
         {"$defs": {"X": {"type": "string"}}, "$ref": "#/$defs/X", "minLength": 2},
     ],
@@ -169,3 +171,13 @@ def test_replay_key_independent_of_runtime_prompt():
     assert replay_key("matching-v1", spec.version, {}) == replay_key(
         "matching-v1", changed.version, {}
     )
+
+
+def test_revision_nullable_contract_retains_nested_constraints():
+    contract = build_prompt_contract(ResumeRevisionProposal)
+    branches = contract["properties"]["updated_resume"]["anyOf"]
+    assert branches[1] == {"type": "null"}
+    assert branches[0]["additionalProperties"] is False
+    assert branches[0]["properties"]["headline"]["properties"]["evidence_ids"]["minItems"] == 1
+    assert contract["properties"]["action"]["enum"] == ["REVISE", "ASK_USER", "NO_CHANGE"]
+    assert "$ref" not in serialize_contract(contract)

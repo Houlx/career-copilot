@@ -1,0 +1,119 @@
+{
+  "success": true,
+  "results": [
+    {
+      "case_id": "revision-01",
+      "passed": true,
+      "metrics": {
+        "schema_success": true,
+        "expected_action": true,
+        "valid_evidence_refs": true,
+        "numeric_grounding": true,
+        "unsupported_fact_count": 0,
+        "language_preserved": true,
+        "base_resume_unchanged_if_not_accepted": true
+      },
+      "validation_error": null
+    },
+    {
+      "case_id": "revision-02",
+      "passed": true,
+      "metrics": {
+        "schema_success": true,
+        "expected_action": true,
+        "valid_evidence_refs": true,
+        "numeric_grounding": true,
+        "unsupported_fact_count": 0,
+        "language_preserved": true,
+        "base_resume_unchanged_if_not_accepted": true
+      },
+      "validation_error": null
+    },
+    {
+      "case_id": "revision-03",
+      "passed": true,
+      "metrics": {
+        "schema_success": true,
+        "expected_action": true,
+        "valid_evidence_refs": true,
+        "numeric_grounding": true,
+        "unsupported_fact_count": 0,
+        "language_preserved": true,
+        "base_resume_unchanged_if_not_accepted": true
+      },
+      "validation_error": null
+    },
+    {
+      "case_id": "revision-04",
+      "passed": true,
+      "metrics": {
+        "schema_success": true,
+        "expected_action": true,
+        "valid_evidence_refs": true,
+        "numeric_grounding": true,
+        "unsupported_fact_count": 0,
+        "language_preserved": true,
+        "base_resume_unchanged_if_not_accepted": true
+      },
+      "validation_error": null
+    },
+    {
+      "case_id": "revision-05",
+      "passed": true,
+      "metrics": {
+        "schema_success": true,
+        "expected_action": true,
+        "valid_evidence_refs": true,
+        "numeric_grounding": false,
+        "unsupported_fact_count": 0,
+        "language_preserved": true,
+        "base_resume_unchanged_if_not_accepted": true
+      },
+      "validation_error": "RESUME_GROUNDING_FAILED"
+    },
+    {
+      "case_id": "revision-06",
+      "passed": true,
+      "metrics": {
+        "schema_success": true,
+        "expected_action": true,
+        "valid_evidence_refs": true,
+        "numeric_grounding": true,
+        "unsupported_fact_count": 0,
+        "language_preserved": true,
+        "base_resume_unchanged_if_not_accepted": true
+      },
+      "validation_error": null
+    },
+    {
+      "case_id": "revision-07",
+      "passed": true,
+      "metrics": {
+        "schema_success": true,
+        "expected_action": true,
+        "valid_evidence_refs": true,
+        "numeric_grounding": true,
+        "unsupported_fact_count": 0,
+        "language_preserved": true,
+        "base_resume_unchanged_if_not_accepted": true
+      },
+      "validation_error": null
+    },
+    {
+      "case_id": "revision-08",
+      "passed": true,
+      "metrics": {
+        "schema_success": true,
+        "expected_action": true,
+        "valid_evidence_refs": true,
+        "numeric_grounding": true,
+        "unsupported_fact_count": 0,
+        "language_preserved": true,
+        "base_resume_unchanged_if_not_accepted": true
+      },
+      "validation_error": null
+    }
+  ],
+  "live_api_calls": 0,
+  "limits": "Reviewed fixture regression; unsupported_fact_count checks refs only, not semantic entailment. Base immutability here is an input check; API tests verify DB immutability."
+}

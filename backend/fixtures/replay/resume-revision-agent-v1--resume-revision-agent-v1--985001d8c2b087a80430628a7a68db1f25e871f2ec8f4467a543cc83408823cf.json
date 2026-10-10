@@ -1,0 +1,10 @@
+{
+  "task": "resume-revision-agent-v1",
+  "prompt_version": "resume-revision-agent-v1",
+  "output": {
+    "action": "ASK_USER",
+    "assistant_message": "Emphasize technical depth, project management or business impact?",
+    "updated_resume": null,
+    "change_summary": []
+  }
+}

@@ -25,7 +25,7 @@ def main():
     ):
         health = backend.get("/api/health")
         health.raise_for_status()
-        assert health.json() == {"status": "ok", "phase": 4}
+        assert health.json() == {"status": "ok", "phase": 5}
         config = frontend.get("/api/settings")
         config.raise_for_status()
         assert config.json()["ai_mode"] == "fake", "Run smoke check with AI_MODE=fake"
@@ -193,6 +193,33 @@ def main():
                 )
                 check_policies(nodes)
                 assert nodes[3]["validation_result"]["numeric_grounding_failure_count"] == 0
+                expected = {
+                    "expected_resume_id": resume["id"],
+                    "expected_profile_version": resume["profile_version"],
+                }
+                thread = post(f"/api/resumes/{resume['id']}/revision-threads", expected)["thread"]
+                proposal = post(
+                    f"/api/revision-threads/{thread['id']}/messages",
+                    {**expected, "content": "突出性能优化"},
+                )
+                assert proposal["proposal_id"]
+                assert backend.get(f"/api/resumes/{resume['id']}").json()["resume"] == resume
+                post(f"/api/revision-proposals/{proposal['proposal_id']}/reject", expected)
+                proposal = post(
+                    f"/api/revision-threads/{thread['id']}/messages",
+                    {**expected, "content": "调整项目顺序"},
+                )
+                revised = post(
+                    f"/api/revision-proposals/{proposal['proposal_id']}/accept", expected
+                )["resume"]
+                assert revised["parent_resume_id"] == resume["id"]
+                assert revised["id"] != resume["id"] and revised["revision_number"] == 1
+                assert backend.get(f"/api/resumes/{resume['id']}").json()["resume"] == resume
+                revision_nodes = backend.get(f"/api/debug/runs/{proposal['run_id']}").json()[
+                    "nodes"
+                ]
+                check_policies(revision_nodes)
+                assert revision_nodes[1]["agent_action"] == "REVISE"
             post(
                 "/api/profile/raw",
                 {"raw_input": "Changed synthetic profile.", "expected_version": 4},
@@ -210,11 +237,14 @@ def main():
                     ).status_code
                     != 200
                 )
-                frontend.delete(f"/api/resumes/{resume['id']}").raise_for_status()
-                assert backend.get(f"/api/resumes/{resume['id']}").status_code == 404
+                assert frontend.delete(f"/api/resumes/{resume['id']}").status_code == 409
+                assert backend.get(f"/api/resumes/{resume['id']}").status_code == 200
                 assert backend.get(f"/api/jobs/{job['id']}").status_code == 200
     if args.resume:
-        print("PASS: Resume generation / grounding / GET / outdated / delete; 0 live requests")
+        print(
+            "PASS: Resume generation / grounding / revision reject + accept / "
+            "immutable history / outdated; 0 live requests"
+        )
     print("PASS: Settings task policy / effective reasoning / reasoning source in traces")
     print("PASS: HTTP → Vite proxy → FastAPI → LangGraph → SQLite → trace response")
     print("PASS: debug UI shell / node diff / standalone replay; 0 live API calls")

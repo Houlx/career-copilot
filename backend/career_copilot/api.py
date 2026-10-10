@@ -13,14 +13,17 @@ from .models.jobs import JobExtraction, JobRequirements, Matching, ScoreabilityR
 from .models.profile import NormalizedProfile, ProfileFacts
 from .models.prompts import PROMPTS, DiagnosticResult
 from .models.resumes import Language, ResumeDraft
+from .models.revisions import ResumeRevisionProposal, RevisionExpected, RevisionInstruction
 from .models.router import ModelRouter
 from .profile_store import ProfileStore
 from .resume_store import ResumeStore
+from .revision_store import RevisionStore
 from .tracing import RunTrace
 from .workflows.dummy import build_dummy_graph
 from .workflows.jobs import build_job_graph
 from .workflows.profile import build_profile_graph
 from .workflows.resumes import build_resume_graph
+from .workflows.revisions import build_revision_graph
 
 
 class DummyRequest(BaseModel):
@@ -64,6 +67,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     profiles = ProfileStore(db)
     jobs = JobStore(db)
     resumes = ResumeStore(db)
+    revisions = RevisionStore(db)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -92,16 +96,25 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 ErrorCode.PROFILE_NOT_FOUND,
                 ErrorCode.JOB_NOT_FOUND,
                 ErrorCode.RESUME_NOT_FOUND,
+                ErrorCode.REVISION_THREAD_NOT_FOUND,
+                ErrorCode.REVISION_PROPOSAL_NOT_FOUND,
             }
             else 409
             if exc.code
-            in {ErrorCode.PROFILE_CONFLICT, ErrorCode.JOB_OUTDATED, ErrorCode.JOB_NOT_COMPLETED}
+            in {
+                ErrorCode.PROFILE_CONFLICT,
+                ErrorCode.JOB_OUTDATED,
+                ErrorCode.JOB_NOT_COMPLETED,
+                ErrorCode.REVISION_BASE_OUTDATED,
+                ErrorCode.REVISION_PROPOSAL_CONFLICT,
+            }
             else 422
             if exc.code
             in {
                 ErrorCode.PROFILE_VALIDATION_FAILED,
                 ErrorCode.RESUME_VALIDATION_FAILED,
                 ErrorCode.RESUME_GROUNDING_FAILED,
+                ErrorCode.REVISION_VALIDATION_FAILED,
             }
             else 500
         )
@@ -109,7 +122,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/api/health")
     def health():
-        return {"status": "ok", "phase": 4}
+        return {"status": "ok", "phase": 5}
 
     @app.get("/api/settings")
     def read_settings():
@@ -244,6 +257,38 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise CopilotError(ErrorCode.RESUME_NOT_FOUND)
         return {"deleted": True}
 
+    @app.post("/api/resumes/{resume_id}/revision-threads")
+    def create_revision_thread(resume_id: str, body: RevisionExpected):
+        thread_id = revisions.create(resume_id, body.model_dump())
+        return {"thread": revisions.get(thread_id)}
+
+    @app.get("/api/resumes/{resume_id}/revision-thread")
+    def get_revision_thread(resume_id: str):
+        return {"thread": revisions.get_for_resume(resume_id)}
+
+    @app.post("/api/revision-threads/{thread_id}/messages")
+    def revision_message(thread_id: str, body: RevisionInstruction):
+        trace = RunTrace(db, settings, "resume_revision_agent", "resume-revision-agent-v1")
+        state = trace.execute(
+            build_revision_graph(trace, revisions, router),
+            {"thread_id": thread_id, "instruction": body.model_dump()},
+        )
+        return {
+            "run_id": trace.run_id,
+            "proposal_id": state["proposal_id"],
+            "thread": revisions.get(thread_id),
+        }
+
+    @app.post("/api/revision-proposals/{proposal_id}/accept")
+    def accept_revision(proposal_id: str, body: RevisionExpected):
+        result = revisions.resolve(proposal_id, body.model_dump(), True)
+        return {**result, "resume": resumes.get(result["resume_id"])}
+
+    @app.post("/api/revision-proposals/{proposal_id}/reject")
+    def reject_revision(proposal_id: str, body: RevisionExpected):
+        result = revisions.resolve(proposal_id, body.model_dump(), False)
+        return {"thread": revisions.get(result["thread_id"])}
+
     debug_deps = [Depends(development_only)]
 
     @app.get("/debug/runs", dependencies=debug_deps, include_in_schema=False)
@@ -269,6 +314,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # Forced replay: independent execution without business or trace writes.
         tasks = {
             "resume-generation-v1": ("generation_model", ResumeDraft),
+            "resume-revision-agent-v1": ("generation_model", ResumeRevisionProposal),
             "jd-requirements-v2": ("generation_model", JobRequirements),
             "scoreability-v1": ("judge_model", ScoreabilityResult),
             "jd-extract-v1": ("judge_model", JobExtraction),

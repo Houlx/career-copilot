@@ -1,6 +1,6 @@
 # Career Copilot
 
-独立的、面向个人求职的 Workflow-first AI 应用。当前 **Phase 4.4 完成**，结构化输出由 Pydantic contract 驱动。Generation task policy：`profile-facts-v1 → low`，`jd-requirements-v2 / matching-v1 / resume-generation-v1 → high`；其余 Generation tasks 在 role reasoning unset 时使用 Provider 默认行为。优先级为 task-specific → role-level fallback → provider default。Settings 只读展示 task policy，trace 记录 effective reasoning 与来源。修改配置或代码后重启后端生效。当前交接见 [HANDOFF.md](docs/HANDOFF.md)，结构化输出设计见 [STRUCTURED_OUTPUT_CONTRACT.md](docs/STRUCTURED_OUTPUT_CONTRACT.md)；历史配置能力见 [PHASE_4_2.md](docs/PHASE_4_2.md) 和 [PHASE_4_3.md](docs/PHASE_4_3.md)。
+独立的、面向个人求职的 Workflow-first AI 应用。当前 **Phase 5 完成**，结构化输出由 Pydantic contract 驱动。Generation task policy：`profile-facts-v1 → low`，`jd-requirements-v2 / matching-v1 / resume-generation-v1 / resume-revision-agent-v1 → high`；其余 Generation tasks 在 role reasoning unset 时使用 Provider 默认行为。优先级为 task-specific → role-level fallback → provider default。Settings 只读展示 task policy，trace 记录 effective reasoning 与来源。修改配置或代码后重启后端生效。当前交接见 [HANDOFF.md](docs/HANDOFF.md)，结构化输出设计见 [STRUCTURED_OUTPUT_CONTRACT.md](docs/STRUCTURED_OUTPUT_CONTRACT.md)；历史配置能力见 [PHASE_4_2.md](docs/PHASE_4_2.md) 和 [PHASE_4_3.md](docs/PHASE_4_3.md)。
 
 Generation/GLM 负责 Profile facts、normalization、JD requirements、matching 和 Resume generation；Judge/Jev 只负责有限候选上的 scoreability。结果和指标见 [PHASE_3_5B_R.md](docs/PHASE_3_5B_R.md)。原 Jev 开放文本 extraction 的失败探索保留在 [PHASE_3_5B.md](docs/PHASE_3_5B.md)。
 
@@ -34,6 +34,8 @@ npm --prefix frontend run dev
 
 ## 已实现
 
+- Resume Revision：受限 REVISE / ASK_USER / NO_CHANGE、独立 conversation、结构化 proposal、Before/After、显式 Accept/Reject、不可覆盖的 parent history、并发及 outdated 门禁。使用 [Phase 5](docs/PHASE_5.md) 中的局部 Agent；其他业务 workflow 保持固定。revision history 中的 Resume 保留且禁止删除。
+
 - Resume：显式生成、zh/en/ja、七节点固定图、逐事实引用/数字校验、Markdown、历史/删除/outdated、Evidence 快照、浏览器打印。
 - Jobs 输入、历史、详情；九节点固定 Job Analysis 图，全部 active Evidence 匹配、严格引用校验、Python Coverage、原子保存和 outdated。
 
@@ -54,7 +56,7 @@ backend/
   career_copilot/
     api.py                  # HTTP、配置展示、debug、错误响应
     config.py               # 环境配置与角色配置
-    database.py             # SQLite schema v4：runs / nodes / profile / evidence / jobs / resumes
+    database.py             # SQLite schema v5：runs / nodes / profile / evidence / jobs / resumes / revision
     errors.py               # 明确错误分类
     tracing.py              # run、节点追踪、摘要 diff、脱敏
     models/
@@ -187,3 +189,5 @@ uv run python scripts/eval_resumes.py
 pytest 默认禁用 TCP socket，仅允许 TestClient 所需 Unix socket。Provider contract 测试使用 `httpx.MockTransport`，不会访问真实 Provider。前端测试使用模拟 fetch。普通测试 **0 live API calls**。
 
 参考：[LangGraph StateGraph](https://reference.langchain.com/python/langgraph/graph/state/StateGraph/compile)、[FastAPI lifespan testing](https://fastapi.tiangolo.com/advanced/testing-events/)。设计见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)，后续 session 先读 [docs/HANDOFF.md](docs/HANDOFF.md)。
+
+Revision 位于 Resume Detail 的 Revise with AI 区域。提出要求后查看 diff，点击 Accept revision 才生成新 Resume；没有 Evidence 的新经历需先更新 Profile。Revision 暂不支持切换语言。离线运行 `uv run python scripts/eval_resume_revision.py`；阶段实现验证全部 0 live requests。

@@ -11,6 +11,7 @@ from career_copilot.models.jobs import JobRequirements, Matching
 from career_copilot.models.profile import NormalizedProfile, ProfileFacts
 from career_copilot.models.prompts import PROMPTS, DiagnosticResult
 from career_copilot.models.resumes import ResumeDraft
+from career_copilot.models.revisions import ResumeRevisionProposal
 from career_copilot.models.router import AI_OBSERVER, AI_PAYLOAD_OBSERVER, ModelRouter
 from fastapi.testclient import TestClient
 from pydantic import SecretStr, ValidationError
@@ -62,6 +63,7 @@ def test_settings_reasoning_allowlist_and_privacy(settings, effort):
         ("jd-requirements-v2", JobRequirements),
         ("matching-v1", Matching),
         ("resume-generation-v1", ResumeDraft),
+        ("resume-revision-agent-v1", ResumeRevisionProposal),
         ("generation-diagnostic-v1", DiagnosticResult),
     ],
 )
@@ -302,6 +304,7 @@ def test_existing_task_overrides_preserved():
         "jd-requirements-v2": "high",
         "matching-v1": "high",
         "resume-generation-v1": "high",
+        "resume-revision-agent-v1": "high",
     }
 
 

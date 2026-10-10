@@ -131,6 +131,9 @@ export interface ResumeDraft {
   sections: { kind: string; items: ResumeFact[] }[];
 }
 export interface Resume {
+  parent_resume_id?: string;
+  revision_thread_id?: string;
+  revision_number?: number;
   id: string;
   job_id: string;
   profile_version: number;

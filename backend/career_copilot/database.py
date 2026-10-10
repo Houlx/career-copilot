@@ -76,7 +76,34 @@ CREATE TABLE IF NOT EXISTS resumes (
  markdown TEXT NOT NULL, evidence_json TEXT NOT NULL, created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS resumes_job ON resumes(job_id,created_at DESC);
-PRAGMA user_version = 4;
+CREATE TABLE IF NOT EXISTS resume_revision_threads (
+ id TEXT PRIMARY KEY,
+ base_resume_id TEXT NOT NULL UNIQUE REFERENCES resumes(id),
+ current_resume_id TEXT NOT NULL REFERENCES resumes(id),
+ job_id TEXT NOT NULL, profile_version INTEGER NOT NULL,
+ generation INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS resume_revision_messages (
+ id TEXT PRIMARY KEY, thread_id TEXT NOT NULL REFERENCES resume_revision_threads(id),
+ role TEXT NOT NULL CHECK(role IN ('user','assistant')), content TEXT NOT NULL,
+ created_at TEXT NOT NULL, sequence INTEGER NOT NULL, UNIQUE(thread_id,sequence)
+);
+CREATE TABLE IF NOT EXISTS resume_revision_proposals (
+ id TEXT PRIMARY KEY, thread_id TEXT NOT NULL REFERENCES resume_revision_threads(id),
+ base_resume_id TEXT NOT NULL REFERENCES resumes(id),
+ status TEXT NOT NULL CHECK(status IN ('PENDING','ACCEPTED','REJECTED','SUPERSEDED')),
+ proposal_json TEXT NOT NULL, diff_json TEXT NOT NULL,
+ accepted_resume_id TEXT REFERENCES resumes(id), created_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS revision_pending ON resume_revision_proposals(thread_id)
+ WHERE status='PENDING';
+CREATE TABLE IF NOT EXISTS resume_revision_lineage (
+ resume_id TEXT PRIMARY KEY REFERENCES resumes(id),
+ parent_resume_id TEXT NOT NULL UNIQUE REFERENCES resumes(id),
+ revision_thread_id TEXT NOT NULL REFERENCES resume_revision_threads(id),
+ revision_number INTEGER NOT NULL, UNIQUE(revision_thread_id,revision_number)
+);
+PRAGMA user_version = 5;
 """
 
 
@@ -98,7 +125,7 @@ class Database:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as conn:
             conn.execute("PRAGMA journal_mode = WAL")
-            if conn.execute("PRAGMA user_version").fetchone()[0] > 4:
+            if conn.execute("PRAGMA user_version").fetchone()[0] > 5:
                 raise CopilotError(ErrorCode.PERSISTENCE_FAILED)
             conn.executescript(SCHEMA)
 

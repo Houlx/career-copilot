@@ -81,6 +81,8 @@ class RunTrace:
                 "error_code": None,
                 "ai": None,
             }
+            if name == "agent_decide":
+                trace["agent_step"] = state.get("agent_step_count", 0) + 1
             ai_payload = {}
             diagnostics_token = DIAGNOSTICS_ENABLED.set(self.settings.payloads_enabled)
             token = AI_OBSERVER.set(lambda meta: trace.update(ai=meta))
@@ -97,6 +99,10 @@ class RunTrace:
                     state_changes=state_diff(state, updates),
                     validation_result={"status": "passed", "check": "node_output_is_mapping"},
                 )
+                if "agent_step_count" in updates:
+                    trace["agent_step"] = updates["agent_step_count"]
+                if updates.get("agent_action") in {"REVISE", "ASK_USER", "NO_CHANGE"}:
+                    trace["agent_action"] = updates["agent_action"]
                 for key in ("validation_metrics", "language_validation"):
                     if key in updates:
                         trace["validation_result"].update(updates[key])

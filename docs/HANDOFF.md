@@ -2,14 +2,28 @@
 
 更新日期：2026-10-10（Asia/Shanghai）
 
-## Current update — Resume reasoning policy
+## Current status — Phase 5 Resume Revision Agent
+
+**Phase 5 完成。Agent live requests = 0。完成提交后 STOP，不执行 live 或后续 Phase。**
+
+- 新增独立 bounded local Resume Revision graph：load_revision_context → agent_decide → REVISE 的共享 validation/diff 或 ASK_USER/NO_CHANGE 的 response → 等待用户。只有 revision 使用有限模型动作；Initial Resume graph/prompt 和其他固定 workflow 不变。全量 active Evidence 由 Python 预加载，无工具/LOAD_EVIDENCE/MCP/Plugin/multi-agent/RAG/长期 memory。
+- Pydantic ResumeRevisionProposal / RevisionChange、严格 action-content invariant，复用 ResumeDraft。contract 层支持 nullable anyOf；所有旧 contract 保持不变。revision task=Generation/high/7000 output tokens，沿用 Generation timeout，其他 task policy 不变。最多一次 schema retry，无 grounding repair loop；decision step limit=4。
+- 复用 Evidence/current/active refs、numbers、language、schema 与 deterministic Markdown renderer。用户 instruction、Job 和 matching reasons 都不是事实。现有 deterministic checks 不证明语义蕴涵，语言校验仅检查 language 字段；数字 scope 和非数字事实仍需用户审核。
+- SQLite v5 新增 revision threads/messages/proposals/lineage，v4 resumes 结构不变。一个初始 Resume 一个独立 thread，accepted 子版本延续线性 conversation；固定 job/profile version，不自动迁移。模型仅最近 10 条消息，业务 DB 保留完整 conversation。Proposal PENDING/ACCEPTED/REJECTED/SUPERSEDED，每 thread 一个 pending；新 instruction 替代旧 pending，以 accepted Resume 为 base。
+- mutation 携带 expected_resume_id/profile_version，generation counter 拒绝并发过时模型返回。Accept BEGIN IMMEDIATE 内重新检查全部 gate 和 validation，原子插入新 Resume/Evidence snapshot/lineage 并更新 proposal/thread，旧 Resume 永不覆盖。revision history 中的 Resume 禁止删除（409），其他 initial Resume 保留原删除行为。历史/outdated 可读，stale accept 409。
+- Resume Detail 新增 RevisionPanel：conversation、Send、loading/error、summary、Python Before/After、Accept/Reject、Base/Parent/Revision # links。没有自动确认或 Profile enrichment。trace agent_step/action 可见，默认消息 shape/length only，不保存 hidden reasoning。
+- 离线验证：**449 backend tests / 29 frontend tests passed**；Ruff check/format、frontend check/build/audit（0 vulnerabilities）通过。Profile 10-case、Jobs 12/8/5-case、Resume 6-case replay eval 通过；Revision **8/8** reviewed fixture cases 通过，包含 numeric 99% 故意错误被拒绝。精确 mock wire 覆盖 revision json_object/json_schema/high/task/timeout/output limit，不访问 Provider。
+- 独立临时端口/空 DB fake HTTP --resume 通过：生成 Resume → thread → proposal → reject → proposal → accept → 新 Resume，验证 parent 不变、trace/policies/outdated gate；临时 backend/frontend/config/DB 均已清理。未写入产品数据库，未改 .env，没有 live requests。
+- 详见 [PHASE_5.md](PHASE_5.md)，结果 [revision.json](../evals/results/phase_5/revision.json)。后续 live manual acceptance 必须由用户另行授权。本轮不解决 initial generation latency、matching latency、retry UX、provider tuning 或其他 Phase。
+
+## Historical update — Resume reasoning policy
 
 - `resume-generation-v1` 新增显式 `reasoning_effort=high`，优先于 Generation role fallback。当前 Generation 显式策略为 facts=low、JD v2/matching/resume=high；normalize/diagnostic 继续使用 role fallback 或 Provider 默认行为。
 - 更新固定 task policy 断言和前端 Settings fixture/显示断言；现有测试继续验证 Resume 在两种 structured output 模式下的精确 wire，以及 fake/replay/mock live 成功和失败的持久化 reasoning metadata。README 和 `.env.example` 同步当前策略。历史阶段记录保留当时配置。
 - 重启 backend 后，Settings 应显示 resume-generation-v1=high；Resume trace 应为 reasoning_effort=high、reasoning_source=task。离线回归不能证明真实模型质量或耗时改善。
 - 验证：420 backend / 25 frontend tests、Ruff check/format、frontend check/build/audit（0 vulnerabilities）、Profile 10-case、Jobs 12/8/5-case、Resume 6-case replay eval 全通过。独立临时端口/空 DB fake HTTP `--resume` 全流程通过，Settings 与 Resume high/task trace 正常；临时服务和 DB 已清理。0 live requests。
 
-## Current status — Phase 4.4
+## Historical status — Phase 4.4
 
 **Pydantic-driven structured output contracts 完成。Agent live requests=0，没有 Phase 5。**
 

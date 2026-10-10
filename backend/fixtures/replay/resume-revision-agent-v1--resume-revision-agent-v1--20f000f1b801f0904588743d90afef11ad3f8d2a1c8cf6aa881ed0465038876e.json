@@ -1,0 +1,10 @@
+{
+  "task": "resume-revision-agent-v1",
+  "prompt_version": "resume-revision-agent-v1",
+  "output": {
+    "action": "NO_CHANGE",
+    "assistant_message": "No CUDA in confirmed Evidence. Update and confirm Profile first.",
+    "updated_resume": null,
+    "change_summary": []
+  }
+}

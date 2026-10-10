@@ -276,7 +276,7 @@ def test_schema_v3_migration_preserves_artifacts(tmp_path):
     db.initialize()
     db.initialize()
     with db.connect() as conn:
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 4
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 5
         assert conn.execute("SELECT id FROM jobs").fetchone()[0] == "old"
         assert conn.execute("SELECT count(*) FROM resumes").fetchone()[0] == 0
 

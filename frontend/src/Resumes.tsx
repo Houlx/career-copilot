@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { RevisionPanel } from './RevisionPanel';
 import { api, type Job, type Resume, type ResumeLanguage } from './api';
 
 const languages = { zh: '中文', en: 'English', ja: '日本語' };
@@ -189,6 +190,7 @@ export function ResumeDetail({ id, go }: { id: string; go: (path: string) => voi
           </section>
         ))}
       </article>
+      <RevisionPanel key={resume.id} resume={resume} go={go} />
       <details className="card resume-controls">
         <summary>Show Evidence</summary>
         {facts.map((item, n) => (

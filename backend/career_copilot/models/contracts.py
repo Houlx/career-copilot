@@ -53,6 +53,8 @@ def build_prompt_contract(response_model: type[BaseModel]) -> dict:
                 result[key] = value
             elif key == "properties":
                 result[key] = {name: compact(child, stack) for name, child in value.items()}
+            elif key == "anyOf":
+                result[key] = [compact(child, stack) for child in value]
             elif key == "items":
                 result[key] = compact(value, stack)
             elif key == "additionalProperties":

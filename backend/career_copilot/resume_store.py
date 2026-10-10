@@ -115,6 +115,11 @@ class ResumeStore:
             or job["profile_version"] != result["profile_version"]
             or job["status"] != "completed"
         )
+        lineage = conn.execute(
+            "SELECT * FROM resume_revision_lineage WHERE resume_id=?", (result["id"],)
+        ).fetchone()
+        if lineage:
+            result.update(dict(lineage))
         return result
 
     def get(self, resume_id):
@@ -137,4 +142,19 @@ class ResumeStore:
 
     def delete(self, resume_id):
         with self.db.connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            if (
+                conn.execute(
+                    (
+                        "SELECT 1 FROM resume_revision_threads WHERE base_resume_id=? OR "
+                        "current_resume_id=?"
+                    ),
+                    (resume_id, resume_id),
+                ).fetchone()
+                or conn.execute(
+                    "SELECT 1 FROM resume_revision_lineage WHERE resume_id=? OR parent_resume_id=?",
+                    (resume_id, resume_id),
+                ).fetchone()
+            ):
+                raise CopilotError(ErrorCode.REVISION_PROPOSAL_CONFLICT)
             return conn.execute("DELETE FROM resumes WHERE id=?", (resume_id,)).rowcount > 0

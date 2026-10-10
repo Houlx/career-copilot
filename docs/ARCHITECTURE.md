@@ -23,7 +23,7 @@ flowchart TD
 
 Phase 1 的 dummy graph 只有固定边：`START → prepare_input → mutate_state → END`。它只证明工作流和追踪闭环，不承担 Career Profile 功能。ModelRouter 独立构建，其网络分支不会被 dummy graph 使用。Phase 2 新增独立 `profile_workflow`，固定 load → extract → validate facts → normalize → validate profile → persist。确认是独立 Python/API 事务，不在 AI Graph 内。
 
-Phase 3.5B-R 的独立九节点 Job Analysis graph：确认门禁 → Generation extraction → validation → Jev scoreability → Python guard → 全量证据 Generation matching → validation → Python Coverage → 原子保存；Phase 4 已新增独立七节点 Resume Generation graph。用户确认和显式生成简历的授权边界由 API/Python 检查。不存在 Agent loop、ToolRegistry、模型动态选边、MCP、RAG、embedding、auth 或多用户设计。
+Phase 3.5B-R 的独立九节点 Job Analysis graph：确认门禁 → Generation extraction → validation → Jev scoreability → Python guard → 全量证据 Generation matching → validation → Python Coverage → 原子保存；Phase 4 已新增独立七节点 Resume Generation graph。用户确认和显式生成简历的授权边界由 API/Python 检查。Phase 5 仅在独立 Resume Revision graph 引入模型动态选边；不存在通用 Agent Harness、ToolRegistry、MCP、RAG、embedding、auth 或多用户设计。
 
 ## Generation task inference policy (Phase 4.3)
 
@@ -35,7 +35,7 @@ Role-level fallback (GENERATION_REASONING_EFFORT)
 Provider default (wire field absent)
 ```
 
-这是 deterministic inference configuration。当前沿用工作区已有 Generation task policy：profile-facts-v1=low、jd-requirements-v2=high、matching-v1=high，其余默认 None；历史 jd-extract-v1=low 保留。Phase 4.4 未调整 policy。RoleModel 每次调用解析 effective reasoning/source，live 时复制 role ModelConfig 注入 Provider，不修改共享 role 配置。task override 优先；role-level low/high/max 能力保留，默认 unset。Workflow 只调用 task，Provider 不知道业务 task policy。没有模型名/URL 检测，没有 Agent 决策、模型动态选 reasoning、self-reflection 或 dynamic graph routing；业务图不变。
+这是 deterministic inference configuration。当前沿用工作区已有 Generation task policy：profile-facts-v1=low、jd-requirements-v2=high、matching-v1=high，其余默认 None；历史 jd-extract-v1=low 保留。Phase 4.4 未调整 policy。RoleModel 每次调用解析 effective reasoning/source，live 时复制 role ModelConfig 注入 Provider，不修改共享 role 配置。task override 优先；role-level low/high/max 能力保留，默认 unset。Workflow 只调用 task，Provider 不知道业务 task policy。没有模型名/URL 检测或模型动态选 reasoning；固定业务图不变。Phase 5 revision task 显式 high，其动作选择独立于 deterministic reasoning policy。
 
 成功/失败/fake/replay trace 记录 reasoning_effort 和 reasoning_source=task/role/provider_default；表示最终请求配置，不是服务端执行确认。不存 hidden reasoning，不扩 token schema。Canonical replay hash 仍只由 task/version/business payload 决定，fixtures 无变化。Judge/Jev 不变。
 
@@ -57,11 +57,11 @@ Trace metadata adds `schema_contract_hash`, never a production schema dump. Exis
 
 `CareerState` 当前只有 message / counter / result。节点返回部分更新，LangGraph 合并状态；不维护聊天历史，也不提前加入空业务字段。
 
-SQLite schema v4 保留 `workflow_runs` 与 `node_traces`，增加单例 `career_profile` 与 `career_evidence`，以及 `jobs` / `job_requirements` / `job_matches`。Job 保存时事务内复查确认及版本，全部要求、匹配、Coverage 原子发布；历史引用保留 Evidence，读取时动态计算 outdated。Profile 原文及原文历史、Generation facts、AI 原始整理、用户编辑、上次确认快照分别保留；确认与 Evidence 更新在一个 `BEGIN IMMEDIATE` 事务中完成。所有写操作携带 expected_version，工作流最后写回再次检查，避免旧结果覆盖新内容。普通读事务保证 Profile/Evidence 同一快照。每次写入均在独立事务中提交，开启 WAL、foreign keys、10 秒 busy timeout。每个 workflow 请求创建独立 RunTrace，UUID run_id，节点 sequence 从 1 开始。没有全局共享执行状态。
+SQLite schema v5 保留 `workflow_runs` 与 `node_traces`，增加单例 `career_profile` 与 `career_evidence`，以及 `jobs` / `job_requirements` / `job_matches`。Job 保存时事务内复查确认及版本，全部要求、匹配、Coverage 原子发布；历史引用保留 Evidence，读取时动态计算 outdated。Profile 原文及原文历史、Generation facts、AI 原始整理、用户编辑、上次确认快照分别保留；确认与 Evidence 更新在一个 `BEGIN IMMEDIATE` 事务中完成。所有写操作携带 expected_version，工作流最后写回再次检查，避免旧结果覆盖新内容。普通读事务保证 Profile/Evidence 同一快照。每次写入均在独立事务中提交，开启 WAL、foreign keys、10 秒 busy timeout。每个 workflow 请求创建独立 RunTrace，UUID run_id，节点 sequence 从 1 开始。没有全局共享执行状态。
 
 `node_traces` 使用 `(run_id, sequence)` 主键及 run foreign key；具体 trace 为 JSON，允许后续添加 metadata 而不先建立大量空列。时间保存 UTC ISO 8601，耗时使用 monotonic performance counter。UI 列表以 Asia/Shanghai 展示时间。
 
-本阶段不做 graph checkpoint、崩溃恢复或大型迁移框架。v1/v2/v3 → v4 幂等新增表，保留 trace；未知更高 schema 版本拒绝启动。进程在执行中被杀死会保留 running run；不会伪造 completed 状态。后续需要可恢复业务边界时，独立加入 checkpoint/recovery 设计。
+本阶段不做 graph checkpoint、崩溃恢复或大型迁移框架。v1/v2/v3/v4 → v5 幂等新增表，保留 trace；未知更高 schema 版本拒绝启动。进程在执行中被杀死会保留 running run；不会伪造 completed 状态。后续需要可恢复业务边界时，独立加入 checkpoint/recovery 设计。
 
 ## Observability and privacy
 
@@ -176,3 +176,23 @@ v4 resumes 存 job_id/profile_version/language/status/structured_resume_json/mar
 POST/GET `/api/jobs/{job_id}/resumes`、GET/DELETE `/api/resumes/{resume_id}`；每次明确生成新 artifact。Job Detail 选择语言，Resume Detail 使用同一结构显示正文，Python Markdown 可查看，print CSS 隐藏导航/Evidence。Debug replay 强制离线且不写业务/trace。七节点沿用 shape-only trace，grounding metrics 为确定性 counts，全文仍需 development + opt-in。
 
 离线 267 backend / 21 frontend、6-case Resume eval、全回归与 fake HTTP 通过。唯一一次 GLM json_object synthetic live（retry=0）在 30084.153 ms ReadTimeout，没有输出，live grounding/Markdown 尚未验收，已停止。详细 schema、metrics、结果和限制见 [PHASE_4.md](PHASE_4.md)。
+
+## Phase 5: bounded local Resume Revision Agent
+
+Initial Resume Workflow → Resume Artifact → Resume Revision Agent。
+
+```mermaid
+flowchart TD
+    Initial[Initial Resume fixed workflow] --> Artifact[Accepted Resume artifact]
+    Artifact --> Agent[Resume Revision Agent]
+    Agent -->|ASK_USER| Question[Wait for user message]
+    Agent -->|NO_CHANGE| Response[Respond only]
+    Agent -->|REVISE| Validation[Shared Python validation + deterministic diff]
+    Validation --> Confirm[Explicit user confirmation]
+    Confirm --> Gate[Atomic current-state revalidation]
+    Gate --> New[New Resume artifact + immutable parent chain]
+```
+
+Agent 自主权仅限 revision response action 与结构化措辞。上下文由 Python 加载，包含当前 accepted Resume、Job context、全量 active Evidence、最近 10 条 thread messages。用户消息/JD/match reasons 不能作为事实。无工具权限、Profile enrichment、重分析、扩权、自动保存、multi-agent、RAG 或长期 memory。只有局部 revision 的下一步在运行时不可预先确定；Profile/Job/matching/initial Resume 继续固定 workflow。
+
+v5 threads/messages/proposals/lineage 独立新增，v4 resumes 保留。pending lifecycle、generation optimistic concurrency、唯一 pending/parent 约束、BEGIN IMMEDIATE accept、当前 Profile/Job/Evidence 重验证保证未确认不保存、parent 不覆盖和无半成品。初始 Resume 之间会话隔离，accepted 子版本延续线性 thread，历史只读；不自动迁移到新 Profile。默认 trace 仅 shape，agent_step/action 安全可见。详见 [PHASE_5.md](PHASE_5.md)。
