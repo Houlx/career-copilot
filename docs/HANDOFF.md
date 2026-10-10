@@ -4,6 +4,8 @@
 
 ## Current status — Resume document structure refactor
 
+- 岗位过期后的入口补全：Job Detail 显示“重新分析”，复用保存的原始 JD 和当前 confirmed Profile 创建新报告并跳转，保留旧报告及其简历。Profile 未确认时禁用并提供 Profile 入口；处理中阻止重复请求，失败可重试。前端 35 tests、check/build 通过。
+
 - 边界：Profile identity/contact → deterministic Header snapshot；Career Evidence + Job → LLM semantic ResumeDraft；ResumeDocument → Python Markdown renderer。LLM decides what to say. Renderer decides how the resume is organized and displayed. Header/global section order/visual layout 均由程序决定。
 - 检查后发现旧 Profile 实际只有 entries，没有结构化 identity/contact。新增最小用户编辑字段 basic_info（name/phone/email/location），通过现有 PUT /api/profile 保存；保存会递增版本、取消确认，确认时冻结于 last_confirmed_profile。Profile extraction/normalization contract、匹配与 JD 流程不变。姓名需在 Profile 页面填写、保存并确认后才能生成新简历；不从职业 Evidence/原始文本推断姓名。
 - ResumeDraft 删除生成式 headline，只保留 language/summary/sections。复用稳定 kinds：skills/experience/projects/education/additional（additional 即 qualifications）；summary 是独立字段。单个事实仍严格非空且必须引用 Evidence，教育/资质没有豁免。允许空 summary/section lists，由 renderer 省略；整体空内容拒绝。

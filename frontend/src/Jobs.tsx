@@ -1,5 +1,5 @@
 import { JobResumes } from './Resumes';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api, type Job, type ProfileResponse } from './api';
 
 export const coverageNote =
@@ -133,13 +133,23 @@ export function JobDetail({
   const [job, setJob] = useState<Job>();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [confirmed, setConfirmed] = useState<boolean>();
+  const [reanalyzing, setReanalyzing] = useState(false);
+  const locked = useRef(false);
   useEffect(() => {
     let active = true;
     setJob(undefined);
     setError('');
-    void api<{ job: Job }>(`/jobs/${encodeURIComponent(id)}`)
-      .then((data) => {
-        if (active) setJob(data.job);
+    setConfirmed(undefined);
+    void Promise.all([
+      api<{ job: Job }>(`/jobs/${encodeURIComponent(id)}`),
+      api<ProfileResponse>('/profile'),
+    ])
+      .then(([data, profile]) => {
+        if (active) {
+          setJob(data.job);
+          setConfirmed(!!profile.profile?.confirmed);
+        }
       })
       .catch((e) => {
         if (active) setError(String(e));
@@ -148,14 +158,35 @@ export function JobDetail({
       active = false;
     };
   }, [id]);
-  async function remove() {
+  async function reanalyze() {
+    if (!job || !confirmed || locked.current) return;
+    locked.current = true;
     setBusy(true);
+    setReanalyzing(true);
+    setError('');
+    try {
+      const result = await api<{ job: Job }>('/jobs/analyze', { raw_jd: job.raw_jd });
+      go(`/jobs/${result.job.id}`);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      locked.current = false;
+      setBusy(false);
+      setReanalyzing(false);
+    }
+  }
+  async function remove() {
+    if (locked.current) return;
+    locked.current = true;
+    setBusy(true);
+    setError('');
     try {
       await api(`/jobs/${encodeURIComponent(id)}`, {}, 'DELETE');
       go('/jobs');
     } catch (e) {
       setError(String(e));
     } finally {
+      locked.current = false;
       setBusy(false);
     }
   }
@@ -173,7 +204,25 @@ export function JobDetail({
             <p>{coverageNote}</p>
             <p>Profile version used: {job.profile_version}</p>
             {job.outdated && (
-              <p className="tag">已过期 · Outdated：职业资料已变化，请确认当前资料后重新分析。</p>
+              <div>
+                <p className="tag">已过期 · Outdated：职业资料已变化，请确认当前资料后重新分析。</p>
+                <button
+                  className="primary"
+                  disabled={busy || !confirmed}
+                  onClick={() => void reanalyze()}
+                >
+                  {reanalyzing ? '重新分析中…' : '重新分析'}
+                </button>
+                {confirmed === false && (
+                  <p>
+                    当前职业资料尚未确认。
+                    <button disabled={busy} onClick={() => go('/profile')}>
+                      前往职业资料
+                    </button>
+                  </p>
+                )}
+                {reanalyzing && <p role="status">正在使用当前已确认职业资料重新分析岗位…</p>}
+              </div>
             )}
             <button disabled={busy} onClick={() => void remove()}>
               删除此分析

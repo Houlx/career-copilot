@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import App from './App';
+import { JobDetail } from './Jobs';
 import type { Job } from './api';
 
 let jobs: Job[];
@@ -101,8 +102,11 @@ beforeEach(() => {
           });
         if (fail)
           return { ok: false, json: async () => ({ error_code: 'MATCH_VALIDATION_FAILED' }) };
-        jobs = [structuredClone(job)];
-        data = { job: jobs[0] };
+        const next = jobs.length
+          ? { ...structuredClone(job), id: 'new-analysis', outdated: false }
+          : structuredClone(job);
+        jobs = [...jobs, next];
+        data = { job: next };
       } else if (url === '/api/jobs') data = { jobs: structuredClone(jobs) };
       else if (options?.method === 'DELETE') {
         jobs = [];
@@ -188,4 +192,57 @@ it('shows recent analyses on dashboard', async () => {
   await screen.findByRole('button', { name: 'Synthetic Python role' });
   expect(screen.getByText('50.0%')).toBeInTheDocument();
   expect(screen.getByText('已过期 · Outdated')).toBeInTheDocument();
+});
+
+it('reanalyzes an outdated report with its original JD, preserving history and blocking duplicates', async () => {
+  jobs = [structuredClone(job)];
+  delay = true;
+  const go = vi.fn();
+  render(<JobDetail id={job.id} go={go} debugEnabled={false} />);
+  const button = await screen.findByRole('button', { name: '重新分析' });
+  expect(button).toBeEnabled();
+  expect(vi.mocked(fetch).mock.calls.every(([, options]) => !options)).toBe(true);
+  fireEvent.click(button);
+  await screen.findByText('正在使用当前已确认职业资料重新分析岗位…');
+  expect(screen.getByRole('button', { name: '重新分析中…' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: '删除此分析' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: '重新分析中…' }));
+  const requests = vi.mocked(fetch).mock.calls.filter(([url]) => url === '/api/jobs/analyze');
+  expect(requests).toHaveLength(1);
+  expect(JSON.parse(String(requests[0][1]?.body))).toEqual({ raw_jd: job.raw_jd });
+  finish?.();
+  await waitFor(() => expect(go).toHaveBeenCalledWith('/jobs/new-analysis'));
+  expect(jobs).toHaveLength(2);
+  expect(jobs[0]).toEqual(job);
+});
+
+it('requires Profile confirmation before reanalysis and provides a Profile link', async () => {
+  jobs = [structuredClone(job)];
+  confirmed = false;
+  const go = vi.fn();
+  render(<JobDetail id={job.id} go={go} debugEnabled={false} />);
+  expect(await screen.findByRole('button', { name: '重新分析' })).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: '前往职业资料' }));
+  expect(go).toHaveBeenCalledWith('/profile');
+  expect(vi.mocked(fetch).mock.calls.every(([url]) => url !== '/api/jobs/analyze')).toBe(true);
+});
+
+it('allows reanalysis retry after failure and hides the action on current reports', async () => {
+  jobs = [structuredClone(job)];
+  fail = true;
+  const go = vi.fn();
+  const view = render(<JobDetail id={job.id} go={go} debugEnabled={false} />);
+  fireEvent.click(await screen.findByRole('button', { name: '重新分析' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('MATCH_VALIDATION_FAILED');
+  expect(screen.getByRole('button', { name: '重新分析' })).toBeEnabled();
+  expect(go).not.toHaveBeenCalled();
+  expect(jobs[0]).toEqual(job);
+  fail = false;
+  fireEvent.click(screen.getByRole('button', { name: '重新分析' }));
+  await waitFor(() => expect(go).toHaveBeenCalledWith('/jobs/new-analysis'));
+  view.unmount();
+  jobs = [{ ...structuredClone(job), outdated: false }];
+  render(<JobDetail id={job.id} go={go} debugEnabled={false} />);
+  await screen.findByRole('heading', { name: job.title });
+  expect(screen.queryByRole('button', { name: '重新分析' })).not.toBeInTheDocument();
 });
