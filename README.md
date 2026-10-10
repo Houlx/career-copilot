@@ -1,5 +1,7 @@
 # Career Copilot
 
+完整工作流图见 [LangGraph 结构图](docs/LANGGRAPH.md)，覆盖 Profile、岗位分析、简历生成、简历修改 Agent 与 Dummy 诊断。
+
 独立的、面向个人求职的 Workflow-first AI 应用。当前 **Phase 5 完成**，结构化输出由 Pydantic contract 驱动。Generation task policy：`profile-facts-v1 → low`，`jd-requirements-v2 / matching-v1 / resume-generation-v1 / resume-revision-agent-v1 → high`；其余 Generation tasks 在 role reasoning unset 时使用 Provider 默认行为。优先级为 task-specific → role-level fallback → provider default。Settings 只读展示 task policy，trace 记录 effective reasoning 与来源。修改配置或代码后重启后端生效。当前交接见 [HANDOFF.md](docs/HANDOFF.md)，结构化输出设计见 [STRUCTURED_OUTPUT_CONTRACT.md](docs/STRUCTURED_OUTPUT_CONTRACT.md)；历史配置能力见 [PHASE_4_2.md](docs/PHASE_4_2.md) 和 [PHASE_4_3.md](docs/PHASE_4_3.md)。
 
 Generation/GLM 负责 Profile facts、normalization、JD requirements、matching 和 Resume generation；Judge/Jev 只负责有限候选上的 scoreability。结果和指标见 [PHASE_3_5B_R.md](docs/PHASE_3_5B_R.md)。原 Jev 开放文本 extraction 的失败探索保留在 [PHASE_3_5B.md](docs/PHASE_3_5B.md)。

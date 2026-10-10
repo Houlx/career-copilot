@@ -1,5 +1,7 @@
 # Architecture
 
+当前全部 LangGraph 节点、条件路由和图外确认边界见 [Career Copilot LangGraph 结构图](LANGGRAPH.md)。
+
 ## Fixed workflow boundaries
 
 ```mermaid
