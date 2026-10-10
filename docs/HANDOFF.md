@@ -4,7 +4,17 @@
 
 ## Status
 
-**最新：Phase 3.5B-R1 Structured Output Failure Diagnosis 完成，唯一一次新的 live 请求仍失败，已停止。**
+**最新：Phase 3.5B-R2 Provider Contract Adaptation 完成，唯一一次新 synthetic Profile live 通过四层验证，已停止。**
+
+Generation structured-output capability 显式可配置：`GENERATION_STRUCTURED_OUTPUT=json_schema|json_object`，默认 json_schema，保留旧 strict/schema wire request；本地 GLM `.env` 显式为 json_object。两种模式本地严格 schema/grounding、R1 failure diagnostics 共用且未放宽；prompt、fixture、业务 validators 未改。Settings API/页面和 AI metadata 展示 structured_output_mode，Jev 配置与原生 contract 不变。
+
+live 前全部离线检查通过：后端 **237 passed**、前端 **16 passed**、Ruff/format、frontend check/build/audit（0 vulnerabilities）、Profile/Jobs eval（**0 live requests**）。随后仅原 education case 一次：GLM `glm-5.3-flash` / json_object，HTTP/JSON/Pydantic/business 全通过，6027.08 ms，tokens 166/335/501，retry=0。eval 精确匹配因 title 与 reference 不同记 omission=1/addition=1/type=0/1；实际 type=education，content/source_quote 相同，不能把合同成功当质量满分。debug 已恢复 0。
+
+详见 [PHASE_3_5B_R2.md](PHASE_3_5B_R2.md) 及 [脱敏结果](../evals/results/phase_3_5b_r/profile-live-r2.json)。R2 request count=**1**；3.5B-R/R1/R2 synthetic Profile education 累计 3 次。没有 JD/Jev/normalization/matching/真实 graph live，没有 Phase 4。提交 `Phase 3.5B-R2`、确认 clean 后 STOP。当前没有后续 live 授权；恢复 Step 2–4 须用户重新授权范围与预算。
+
+以下 R1/3.5B-R 状态保留为历史背景：
+
+**历史：Phase 3.5B-R1 Structured Output Failure Diagnosis 完成，唯一一次新的 live 请求仍失败，已停止。**
 
 本轮先通过全部离线验证：后端 **212 passed**、前端 **16 passed**、Ruff/format、frontend check/build/audit（0 vulnerabilities）、Profile/Jobs eval（0 live requests）。之后仅调用原 synthetic education 一次，retry=0：GLM `glm-5.3-flash` HTTP 200，6012.51 ms，tokens 113/377/490。明确失败在 `STRUCTURED_JSON_INVALID`，path=`choices.0.message.content`，type=`JSONDecodeError`，assistant_content_kind=`markdown_fence`；未进入 Pydantic 或 business validation。
 
@@ -26,7 +36,7 @@ Generation/GLM：profile-facts-v1（只改 role）、profile-normalize-v1、jd-r
 
 ## Read first next session
 
-1. 本文及 `docs/PHASE_3_5B_R1.md`，再读历史 `docs/PHASE_3_5B_R.md`。
+1. 本文及 `docs/PHASE_3_5B_R2.md`，再读历史 R1/3.5B-R 文档。
 2. `docs/PHASE_3_5B.md`：历史接口能力发现。
 3. `docs/PHASE_3_5A.md`、`docs/PHASE_3.md`、`docs/ARCHITECTURE.md`；Profile 规则见 `docs/PHASE_2.md`。
 4. 按获授权阶段定向读代码，不重新全仓库审计。

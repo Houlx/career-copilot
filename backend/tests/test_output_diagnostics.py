@@ -18,7 +18,7 @@ FACT = {
 }
 
 
-def invoke(monkeypatch, body, *, debug=True, env="development", raw=False):
+def invoke(monkeypatch, body, *, debug=True, env="development", raw=False, mode="json_schema"):
     real_client = httpx.Client
     requests = []
 
@@ -36,6 +36,7 @@ def invoke(monkeypatch, body, *, debug=True, env="development", raw=False):
         api_key="synthetic-secret",
         ai_debug_payloads=debug,
         app_env=env,
+        generation_structured_output=mode,
     )
     calls = []
     token = AI_OBSERVER.set(calls.append)
@@ -57,12 +58,18 @@ def invoke(monkeypatch, body, *, debug=True, env="development", raw=False):
     finally:
         AI_OBSERVER.reset(token)
     assert len(requests) == 1 and calls[0]["retry_count"] == 0
-    schema = requests[0]["response_format"]["json_schema"]
-    assert schema == {
-        "name": "ProfileFacts",
-        "strict": True,
-        "schema": ProfileFacts.model_json_schema(),
-    }
+    assert calls[0]["structured_output_mode"] == mode
+    if mode == "json_object":
+        assert requests[0]["response_format"] == {"type": "json_object"}
+    else:
+        assert requests[0]["response_format"] == {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "ProfileFacts",
+                "strict": True,
+                "schema": ProfileFacts.model_json_schema(),
+            },
+        }
     return output, calls[0]
 
 
@@ -75,8 +82,9 @@ def envelope(content):
     }
 
 
-def test_profile_contract_success(monkeypatch):
-    output, meta = invoke(monkeypatch, envelope(json.dumps({"facts": [FACT]})))
+@pytest.mark.parametrize("mode", ["json_schema", "json_object"])
+def test_profile_contract_success(monkeypatch, mode):
+    output, meta = invoke(monkeypatch, envelope(json.dumps({"facts": [FACT]})), mode=mode)
     assert output == ProfileFacts.model_validate({"facts": [FACT]})
     assert "failure_stage" not in meta and meta["total_tokens"] == 356
 
@@ -87,10 +95,12 @@ def test_profile_contract_success(monkeypatch):
         ({k: v for k, v in FACT.items() if k != "source_quote"}, "source_quote", "missing"),
         ({**FACT, "extra": "private-career-text"}, "extra", "extra_forbidden"),
         ({**FACT, "type": "invented"}, "type", "literal_error"),
+        ({**FACT, "content": 7}, "content", "string_type"),
     ],
 )
-def test_schema_failure_path_and_privacy(monkeypatch, fact, path, kind):
-    output, meta = invoke(monkeypatch, envelope(json.dumps({"facts": [fact]})))
+@pytest.mark.parametrize("mode", ["json_schema", "json_object"])
+def test_schema_failure_path_and_privacy(monkeypatch, fact, path, kind, mode):
+    output, meta = invoke(monkeypatch, envelope(json.dumps({"facts": [fact]})), mode=mode)
     assert output is None and meta["failure_stage"] == "PYDANTIC_VALIDATION_FAILED"
     assert meta["errors"][0]["loc"] == ["facts", 0, path]
     assert meta["errors"][0]["type"] == kind
@@ -101,8 +111,9 @@ def test_schema_failure_path_and_privacy(monkeypatch, fact, path, kind):
 
 
 @pytest.mark.parametrize("content", ["```json\n{}\n```", "not json", "{"])
-def test_structured_json_failure_without_repair(monkeypatch, content):
-    output, meta = invoke(monkeypatch, envelope(content))
+@pytest.mark.parametrize("mode", ["json_schema", "json_object"])
+def test_structured_json_failure_without_repair(monkeypatch, content, mode):
+    output, meta = invoke(monkeypatch, envelope(content), mode=mode)
     assert output is None and meta["failure_stage"] == "STRUCTURED_JSON_INVALID"
 
 
@@ -119,8 +130,9 @@ def test_structured_json_failure_without_repair(monkeypatch, content):
         ({"usage": {"prompt_tokens": "wrong"}}, False),
     ],
 )
-def test_envelope_failure(monkeypatch, body, raw):
-    output, meta = invoke(monkeypatch, body, raw=raw)
+@pytest.mark.parametrize("mode", ["json_schema", "json_object"])
+def test_envelope_failure(monkeypatch, body, raw, mode):
+    output, meta = invoke(monkeypatch, body, raw=raw, mode=mode)
     assert output is None and meta["failure_stage"] == "RESPONSE_ENVELOPE_INVALID"
 
 
@@ -196,3 +208,24 @@ def test_business_failure_trace_and_public_error_contract(settings, debug):
     assert validation["failure_stage"] == "BUSINESS_VALIDATION_FAILED"
     assert ("errors" in validation) is debug
     assert "Synthetic University" not in json.dumps(validation)
+
+
+@pytest.mark.parametrize("mode", ["json_schema", "json_object"])
+@pytest.mark.parametrize(
+    "fact,rule",
+    [
+        ({**FACT, "source_quote": "Absent"}, "source_quote_contiguous_excerpt"),
+        ({**FACT, "content": "Synthetic University 2026"}, "numeric_grounding"),
+    ],
+)
+def test_both_wire_modes_preserve_business_validation(monkeypatch, mode, fact, rule):
+    output, meta = invoke(monkeypatch, envelope(json.dumps({"facts": [fact]})), mode=mode)
+    assert output is not None and "failure_stage" not in meta
+    token = DIAGNOSTICS_ENABLED.set(True)
+    try:
+        with pytest.raises(CopilotError) as error:
+            validate_facts(output, "Synthetic University")
+    finally:
+        DIAGNOSTICS_ENABLED.reset(token)
+    assert error.value.code == ErrorCode.PROFILE_VALIDATION_FAILED
+    assert error.value.diagnostics["errors"][0]["type"] == rule

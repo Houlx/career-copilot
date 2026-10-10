@@ -135,6 +135,12 @@ function SettingsPage({ settings }: { settings: Settings }) {
             <dl>
               <dt>Provider</dt>
               <dd>{model.provider}</dd>
+              {model.structured_output_mode && (
+                <>
+                  <dt>结构化输出</dt>
+                  <dd>{model.structured_output_mode}</dd>
+                </>
+              )}
               <dt>API Key</dt>
               <dd>{model.api_key_configured ? '已配置 · 不显示密钥' : '未配置'}</dd>
             </dl>

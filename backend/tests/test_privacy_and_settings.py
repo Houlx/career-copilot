@@ -95,3 +95,27 @@ def test_redaction_and_diff_only_changed_fields():
     diff = state_diff({"same": 1, "text": "personal"}, {"same": 1, "text": "changed", "n": 2})
     assert set(diff) == {"text", "n"}
     assert "personal" not in json.dumps(diff)
+
+
+def test_structured_output_default_override_and_settings_privacy(settings, monkeypatch):
+    monkeypatch.delenv("GENERATION_STRUCTURED_OUTPUT", raising=False)
+    assert Settings(_env_file=None).for_role("generation").structured_output_mode == "json_schema"
+    monkeypatch.setenv("GENERATION_STRUCTURED_OUTPUT", "json_object")
+    assert Settings(_env_file=None).for_role("generation").structured_output_mode == "json_object"
+    settings.generation_structured_output = "json_object"
+    settings.judge_provider = "jev"
+    settings.generation_api_key = SecretStr("private-generation-key")
+    settings.generation_base_url = "https://user:password@example.com"
+    with TestClient(create_app(settings)) as client:
+        response = client.get("/api/settings")
+    models = {model["role"]: model for model in response.json()["models"]}
+    assert models["generation"]["structured_output_mode"] == "json_object"
+    assert models["judge"]["structured_output_mode"] is None
+    assert "private-generation-key" not in response.text
+    assert "password" not in response.text and "example.com" not in response.text
+
+
+@pytest.mark.parametrize("value", ["text", "auto", "invalid"])
+def test_structured_output_mode_rejects_unknown_capability(value):
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, generation_structured_output=value)

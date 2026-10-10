@@ -103,6 +103,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     "role": role,
                     "provider": settings.for_role(role).provider,
                     "model": settings.for_role(role).model or "Not configured",
+                    "structured_output_mode": (
+                        settings.for_role(role).structured_output_mode
+                        if settings.for_role(role).provider == "openai_compatible"
+                        else None
+                    ),
                     "api_key_configured": bool(settings.for_role(role).api_key.get_secret_value()),
                 }
                 for role in ("judge", "generation")

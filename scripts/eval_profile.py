@@ -83,6 +83,8 @@ def main(argv=None):
             "live_api_calls": len(calls) if args.live else 0,
             "request_success": True,
             "schema_valid": True,
+            "schema_mapping_success": True,
+            "business_validation_success": True,
             "calls": calls,
             "outputs": outputs,
         },

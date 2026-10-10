@@ -3,7 +3,13 @@ export interface Settings {
   app_env: string;
   debug_enabled: boolean;
   debug_payloads: boolean;
-  models: { role: string; provider: string; model: string; api_key_configured: boolean }[];
+  models: {
+    role: string;
+    provider: string;
+    model: string;
+    api_key_configured: boolean;
+    structured_output_mode?: 'json_schema' | 'json_object' | null;
+  }[];
   prompts: Record<string, string>;
 }
 export interface Run {

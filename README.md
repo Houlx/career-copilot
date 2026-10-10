@@ -1,8 +1,10 @@
 # Career Copilot
 
-独立的、面向个人求职的 Workflow-first AI 应用。当前 **Phase 3.5B-R1 诊断完成，live 仍失败并已停止**：唯一一次新的 GLM synthetic Profile education 请求 HTTP 200，但 assistant content 以 markdown fence 开头，定位为 `STRUCTURED_JSON_INVALID`（尚未进入 Pydantic/grounding）。诊断、212 项后端测试和全部离线检查通过；没有继续 JD/Jev 或 Phase 4。详情见 [PHASE_3_5B_R1.md](docs/PHASE_3_5B_R1.md)。
+独立的、面向个人求职的 Workflow-first AI 应用。当前 **Phase 3.5B-R2 Provider contract 适配完成**：GLM 显式使用 `json_object`，原本地严格 schema/grounding 校验不变，唯一一次 synthetic Profile education live 已通过 HTTP、JSON、Pydantic 和 business validation。后端 237 项、前端 16 项及全部离线检查通过。已停止，未继续 JD/Jev 或 Phase 4；这不代表 live 质量满分或后续任务验收完成。详情见 [PHASE_3_5B_R2.md](docs/PHASE_3_5B_R2.md)。
 
 Generation/GLM 负责 Profile facts、normalization、JD requirements 和 matching；Judge/Jev 只负责有限候选上的 scoreability。结果和指标见 [PHASE_3_5B_R.md](docs/PHASE_3_5B_R.md)。原 Jev 开放文本 extraction 的失败探索保留在 [PHASE_3_5B.md](docs/PHASE_3_5B.md)。
+
+Generation 的 `GENERATION_STRUCTURED_OUTPUT` 可选 `json_schema`（默认，保留原 strict/schema 请求）或 `json_object`（GLM 本地显式配置）；两者共用原 Pydantic/business validation，继续拒绝 markdown fence。Settings API/页面和 AI trace 展示模式，不展示密钥。
 
 ## 本地启动
 

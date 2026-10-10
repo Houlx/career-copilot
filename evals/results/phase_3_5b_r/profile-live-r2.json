@@ -1,0 +1,45 @@
+{
+  "cases": 1,
+  "task": "profile-facts-v1",
+  "metrics": {
+    "fact_omission": 1,
+    "unsupported_fact_addition": 1,
+    "type_correct": 0,
+    "type_total": 1,
+    "numeric_preserved": 0,
+    "numeric_total": 0
+  },
+  "live_api_calls": 1,
+  "request_success": true,
+  "schema_valid": true,
+  "schema_mapping_success": true,
+  "business_validation_success": true,
+  "calls": [
+    {
+      "model_role": "generation",
+      "provider": "openai-compatible",
+      "model_name": "glm-5.3-flash",
+      "prompt_version": "profile-facts-v1",
+      "temperature": 0,
+      "input_tokens": 166,
+      "output_tokens": 335,
+      "total_tokens": 501,
+      "latency_ms": 6027.08,
+      "retry_count": 0,
+      "structured_output_mode": "json_object",
+      "http_status": 200
+    }
+  ],
+  "outputs": {
+    "education": {
+      "facts": [
+        {
+          "type": "education",
+          "title": "计算机学士学位",
+          "content": "在示例大学获得计算机学士学位。",
+          "source_quote": "在示例大学获得计算机学士学位。"
+        }
+      ]
+    }
+  }
+}

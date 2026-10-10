@@ -51,6 +51,14 @@ ContextVar 将单次模型调用 metadata 交给当前 node wrapper，finally �
 
 Debug API 仅 development 可用，production/test 均返回 404。这不是 authentication；本地服务默认绑定 loopback，不部署公网。
 
+## Configurable Provider output contract（Phase 3.5B-R2）
+
+Provider wire format 与业务 schema 分层。ModelConfig.structured_output_mode 支持 json_schema/json_object；Settings 的 GENERATION_STRUCTURED_OUTPUT 默认 json_schema，只有显式选择才调整 Generation。json_schema 保留 name/strict=true/原 Pydantic schema；json_object 只发送 response_format.type=json_object，不发送 schema 参数或改变任务 prompt。GLM 本地显式选 json_object，不按 URL/模型名自动推断 capability；Judge/Jev 原协议不变。
+
+两种模式共享 R1 的解析、严格 schema.model_validate_json 和后续 business grounding；不 strip fence、repair、coerce 或 fallback。原 invoke 仍携带业务 schema，PromptSpec 不变。Settings API models 与 AI metadata 新增 structured_output_mode；Jev 的 Settings 字段为 null，trace 不伪装成 JSON 输出。前端 Settings 展示该配置值。Profile eval 成功分支显式记录 schema_mapping_success/business_validation_success。
+
+R2 唯一一次原 education synthetic live 已通过 HTTP/JSON/Pydantic/business，但 exact eval 标题差异仍计 mismatch；后续任务尚未 live 验收。实现、237/16 项测试和完整结果见 [PHASE_3_5B_R2.md](PHASE_3_5B_R2.md)。以下 R1 保留为诊断设计和历史失败依据。
+
 ## Structured output failure stages（Phase 3.5B-R1）
 
 OpenAICompatibleProvider 明确分开 HTTP → provider JSON → envelope/usage → assistant string content → structured JSON → Pydantic；Profile workflow 随后独立执行 business grounding。HTTP/network 继续 MODEL_REQUEST_FAILED，输出错误继续公开 MODEL_OUTPUT_INVALID；原 Profile business error code 不变。内部 metadata 区分 RESPONSE_ENVELOPE_INVALID、STRUCTURED_JSON_INVALID、PYDANTIC_VALIDATION_FAILED、BUSINESS_VALIDATION_FAILED。

@@ -81,6 +81,8 @@ class RoleModel:
             "latency_ms": 0.0,
             "retry_count": 0,
         }
+        if self.config.provider == "openai_compatible":
+            meta["structured_output_mode"] = self.config.structured_output_mode
         diagnostics_token = DIAGNOSTICS_ENABLED.set(self.debug)
         payload_observer = AI_PAYLOAD_OBSERVER.get()
         if payload_observer:

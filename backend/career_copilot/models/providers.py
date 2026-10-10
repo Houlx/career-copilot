@@ -99,6 +99,13 @@ class OpenAICompatibleProvider(HTTPProvider):
     def invoke[T: BaseModel](
         self, spec: PromptSpec, payload: dict, schema: type[T], meta: dict
     ) -> T:
+        response_format = {"type": self.config.structured_output_mode}
+        if self.config.structured_output_mode == "json_schema":
+            response_format["json_schema"] = {
+                "name": schema.__name__,
+                "strict": True,
+                "schema": schema.model_json_schema(),
+            }
         response = self.post(
             "chat/completions",
             {
@@ -109,14 +116,7 @@ class OpenAICompatibleProvider(HTTPProvider):
                 ],
                 "temperature": spec.temperature,
                 "max_tokens": spec.max_output_tokens,
-                "response_format": {
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": schema.__name__,
-                        "strict": True,
-                        "schema": schema.model_json_schema(),
-                    },
-                },
+                "response_format": response_format,
             },
         )
         meta["http_status"] = response.status_code
