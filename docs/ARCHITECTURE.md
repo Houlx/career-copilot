@@ -11,8 +11,11 @@ flowchart TD
     Graph --> Router[ModelRouter]
     Router --> Judge[Judge role]
     Router --> Generation[Generation role]
-    Judge --> Provider[Fake / Replay / OpenAI-compatible]
-    Generation --> Provider
+    Judge --> Offline[Fake / Replay]
+    Generation --> Offline
+    Judge --> Jev[Jev decision adapter - diagnostic only]
+    Judge --> Compatible[OpenAI-compatible adapter]
+    Generation --> Compatible
     Graph --> Trace[RunTrace node wrappers]
     Trace --> DB
     DB --> Debug[Debug Runs API / UI]
@@ -54,7 +57,9 @@ Settings 在应用构造时加载一次，角色专用配置优先，共享配�
 
 每个可执行 task 有 PromptSpec：版本、角色、prompt、输出上限、温度。已实现 diagnostic-v1、profile-facts-v1、profile-normalize-v1、jd-extract-v1、matching-v1，Pydantic strict 输出 schema 禁止额外字段。Judge 仅从 raw 提取事实并保留连续原文 quote；Generation 仅接收 facts，输出恰好一条 entry 对应一个 source_index，校验类型和数字保留。用户编辑有独立来源标记，不覆盖 raw/AI 版本。不扩展为工具注册驱动的流程。
 
-live 使用 httpx 请求 OpenAI-compatible Chat Completions `json_schema` structured output。客户端 30 秒 timeout，不跟随 redirect；最多两次尝试，无嵌套 SDK 重试，无 repair 对话。HTTP/网络错误是 MODEL_REQUEST_FAILED，结构/校验错误是 MODEL_OUTPUT_INVALID。未来业务节点的特定错误分类已列入 ErrorCode。
+live 按 role provider 配置选择专用 adapter：Jev POST `/systemone`（state/questions），OpenAI-compatible POST `/chat/completions`（`json_schema` structured output）。默认 fake/replay 不构造网络 adapter/client。Jev 仅支持新 `judge-diagnostic-v1`，业务 task 在发送输入前明确拒绝；四个既有业务 prompt/schema/workflow 不变，Jev 业务映射留待 3.5B。新增 `generation-diagnostic-v1` 使用既有 Generation contract。客户端 30 秒 timeout，不跟随 redirect；最多两次尝试，无嵌套 SDK 重试，无 repair 对话。HTTP/网络错误是 MODEL_REQUEST_FAILED，结构/校验错误是 MODEL_OUTPUT_INVALID。未来业务节点的特定错误分类已列入 ErrorCode。
+
+独立 smoke 要求 AI_MODE=live + --live + --role，固定 synthetic 输入，严格一次尝试（不使用常规重试预算）。复用 RunTrace 记录 diagnostic run/node，不调用业务 graph/store，不读写业务表。Jev 已知 response_model/probability/request id 放现有 provider_metadata JSON，继续脱敏，无 schema migration。细节、真实验证状态见 [PHASE_3_5A.md](PHASE_3_5A.md)。
 
 replay 使用 task + prompt_version + 输入 canonical hash 选择明确 fixture。不存在记录、版本不匹配、非法 schema 均明确失败，不调用 live。独立 replay API 固定 replay 模式，即使主服务为 live，仍然不会进行网络请求。replay 不修改业务数据、runs 或 trace。
 

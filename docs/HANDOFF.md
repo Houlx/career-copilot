@@ -4,14 +4,16 @@
 
 ## Status
 
-**Phase 3 — Job Analysis 已完成。完成验证并提交后 STOP。未开始 Phase 4 Resume。**
+**Phase 3.5A — Live Provider Validation 已完成。提交并确认 clean 后 STOP。未开始 3.5B 或 Phase 4。**
+
+Phase 3.5A：新增 Jev native decision adapter 与 Generation OpenAI-compatible adapter、role provider 配置、两个 diagnostic tasks、双重 live gate、一次请求 smoke、复用 trace（含 usage/provider metadata）。自动测试禁 TCP。本阶段检查全部通过：后端 153 passed（新增 42）、前端 16 passed、Ruff/format/check/build/audit（0 vulnerabilities）、两个离线 eval。本次按 Judge → Generation 顺序完成各一次真实 synthetic smoke（共 2 次，无重试）：jev-1.13.0，750.411 ms，tokens 283/21/304；glm-5.3-flash，1085.165 ms，tokens 41/63/104。两份 trace 已核对 structured output、metadata 与 secret 脱敏。本地 AI_DEBUG_PAYLOADS 已恢复 0。详情见 [PHASE_3_5A.md](PHASE_3_5A.md)。不再执行 live 请求；提交、检查 clean 后 STOP。
 
 独立项目；Phase 1 骨架/Observability、Phase 2 Career Profile 全部保留。当前支持确认 Profile → 显式分析 JD → Judge requirements → Generation 全量 Evidence matching → Python validation/Coverage → 原子报告 → UI Evidence 和 outdated。
 
 ## Read first next session
 
 1. 本文。
-2. `docs/PHASE_3.md`、`docs/ARCHITECTURE.md`；Profile 规则见 `docs/PHASE_2.md`。
+2. `docs/PHASE_3_5A.md`、`docs/PHASE_3.md`、`docs/ARCHITECTURE.md`；Profile 规则见 `docs/PHASE_2.md`。
 3. 按获授权阶段定向阅读代码，不重新全仓库审计。
 
 未收到明确指令不要继续 Phase 4 Resume。
@@ -61,7 +63,7 @@ Jobs reference replay：12 extraction missing/addition=0、importance/category=1
 
 实际 `uv run python scripts/check_http.py --jobs --frontend http://127.0.0.1:5177` 已在空临时 DB、fake、development 服务运行通过，包括 Phase 1/2 流程。另终止并重启实际后端进程，确认完整 Job/requirements/matches/Coverage/outdated 恢复。临时服务已关闭；项目业务 DB 未写入测试数据。
 
-**0 live API calls**；未发送真实 Profile/JD 到外部 Provider。pytest 默认禁 TCP，前端 mock fetch，实际 HTTP 仅 loopback。fixtures 全部 synthetic。
+**Phase 3 历史验证为 0 live API calls**；Phase 3.5A 另完成上文两次 synthetic smoke，未发送真实 Profile/JD 到外部 Provider。pytest 默认禁 TCP，前端 mock fetch，实际 HTTP 仅 loopback。fixtures 全部 synthetic。
 
 ## Run
 
@@ -87,4 +89,4 @@ npm --prefix frontend run dev
 
 ## Commit / stop
 
-commit hash 用 `git log -1 --oneline` 获取，避免将自身 commit hash 写入文档。完整验证后提交 Phase 3，确认 working tree clean，STOP。不要开始 Phase 4。
+commit hash 用 `git log -1 --oneline` 获取，避免将自身 commit hash 写入文档。Phase 3.5A 必须两个真实 synthetic smoke 成功后才提交；确认 working tree clean，STOP。不要开始 3.5B / Phase 4。

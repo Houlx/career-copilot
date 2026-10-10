@@ -7,13 +7,14 @@ from time import perf_counter
 from typing import Any, TypeVar
 
 import httpx
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 from ..config import ModelConfig, Settings
 from ..errors import CopilotError, ErrorCode
 from .jobs import JobExtraction, Matching, fake_matching
 from .profile import NormalizedProfile, ProfileFacts
-from .prompts import PROMPTS, DiagnosticResult, PromptSpec
+from .prompts import PROMPTS, DiagnosticResult, JudgeDiagnosticResult, PromptSpec
+from .providers import JevProvider, OpenAICompatibleProvider
 
 T = TypeVar("T", bound=BaseModel)
 AI_OBSERVER: ContextVar[Callable[[dict], None] | None] = ContextVar("ai_observer", default=None)
@@ -42,25 +43,26 @@ class ReplayRecord(BaseModel):
     output: dict
 
 
-class TokenUsage(BaseModel):
-    prompt_tokens: int = Field(default=0, ge=0, strict=True)
-    completion_tokens: int = Field(default=0, ge=0, strict=True)
-
-
 class RoleModel:
     def __init__(self, config: ModelConfig, mode: str, replay_dir: Path):
         self.config = config
         self.mode = mode
         self.replay_dir = replay_dir
 
-    def invoke(self, task: str, payload: dict, schema: type[T]) -> ModelResult[T]:
+    def invoke(
+        self, task: str, payload: dict, schema: type[T], *, max_attempts: int = 2
+    ) -> ModelResult[T]:
+        if max_attempts not in (1, 2):
+            raise ValueError("Only one or two attempts are supported")
         spec = PROMPTS[task]
         if spec.role != self.config.role:
             raise ValueError("Task role does not match model role")
         started = perf_counter()
         meta = {
             "model_role": self.config.role,
-            "provider": "openai-compatible" if self.mode == "live" else self.mode,
+            "provider": (
+                self.config.provider.replace("_", "-") if self.mode == "live" else self.mode
+            ),
             "model_name": self.config.model if self.mode == "live" else self.mode,
             "prompt_version": spec.version,
             "temperature": spec.temperature,
@@ -78,6 +80,10 @@ class RoleModel:
                 # Offline identity fixtures: preserve supplied text, never invent user facts.
                 if task == "diagnostic" and schema is DiagnosticResult:
                     value = {"message": "Provider connection verified"}
+                elif task == "judge-diagnostic-v1" and schema is JudgeDiagnosticResult:
+                    value = {"decision": True}
+                elif task == "generation-diagnostic-v1" and schema is DiagnosticResult:
+                    value = {"message": "ok"}
                 elif task == "profile-facts-v1" and schema is ProfileFacts:
                     raw = payload["raw_input"]
                     value = {
@@ -151,7 +157,7 @@ class RoleModel:
                     raise CopilotError(ErrorCode.MODEL_OUTPUT_INVALID)
                 output = schema.model_validate(record.output)
             elif self.mode == "live":
-                output = self._live(spec, payload, schema, meta)
+                output = self._live(spec, payload, schema, meta, max_attempts)
             else:
                 raise ValueError("Unknown AI mode")
             if payload_observer:
@@ -161,55 +167,32 @@ class RoleModel:
         except (ValidationError, KeyError, TypeError) as exc:
             raise CopilotError(ErrorCode.MODEL_OUTPUT_INVALID) from exc
         finally:
-            meta["latency_ms"] = round((perf_counter() - started) * 1000, 3)
+            if meta["latency_ms"] == 0.0:
+                meta["latency_ms"] = round((perf_counter() - started) * 1000, 3)
             observer = AI_OBSERVER.get()
             if observer:
                 observer(meta.copy())
 
-    def _live(self, spec: PromptSpec, payload: dict, schema: type[T], meta: dict) -> T:
-        # At most two attempts, no repair conversation or hidden automatic SDK retries.
-        for attempt in range(2):
+    def _live(
+        self, spec: PromptSpec, payload: dict, schema: type[T], meta: dict, max_attempts: int
+    ) -> T:
+        # Instantiate adapters only on the live path. One retry owner; no SDK retries.
+        provider = (
+            JevProvider(self.config)
+            if self.config.provider == "jev"
+            else OpenAICompatibleProvider(self.config)
+        )
+        provider.validate_task(spec, schema)
+        for attempt in range(max_attempts):
             meta["retry_count"] = attempt
             try:
-                with httpx.Client(timeout=30, follow_redirects=False) as client:
-                    response = client.post(
-                        f"{self.config.base_url.rstrip('/')}/chat/completions",
-                        headers={
-                            "Authorization": f"Bearer {self.config.api_key.get_secret_value()}"
-                        },
-                        json={
-                            "model": self.config.model,
-                            "messages": [
-                                {"role": "system", "content": spec.system},
-                                {
-                                    "role": "user",
-                                    "content": json.dumps(payload, ensure_ascii=False),
-                                },
-                            ],
-                            "temperature": spec.temperature,
-                            "max_tokens": spec.max_output_tokens,
-                            "response_format": {
-                                "type": "json_schema",
-                                "json_schema": {
-                                    "name": schema.__name__,
-                                    "strict": True,
-                                    "schema": schema.model_json_schema(),
-                                },
-                            },
-                        },
-                    )
-                    response.raise_for_status()
-                    body = response.json()
-                    if not isinstance(body, dict):
-                        raise ValueError("Expected a structured provider response")
-                    usage = TokenUsage.model_validate(body.get("usage") or {})
-                    meta["input_tokens"] += usage.prompt_tokens
-                    meta["output_tokens"] += usage.completion_tokens
-                    meta["total_tokens"] = meta["input_tokens"] + meta["output_tokens"]
-                    return schema.model_validate_json(body["choices"][0]["message"]["content"])
+                return provider.invoke(spec, payload, schema, meta)
             except httpx.HTTPError as exc:
                 failure = CopilotError(ErrorCode.MODEL_REQUEST_FAILED)
                 cause = exc
+                meta["provider_metadata"] = {"error_kind": type(exc).__name__}
+                if isinstance(exc, httpx.HTTPStatusError):
+                    meta["provider_metadata"]["http_status"] = exc.response.status_code
             except (ValueError, KeyError, IndexError, TypeError) as exc:
                 failure = CopilotError(ErrorCode.MODEL_OUTPUT_INVALID)
                 cause = exc

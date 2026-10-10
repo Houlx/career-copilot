@@ -1,6 +1,6 @@
 # Career Copilot
 
-独立的、面向个人求职的 Workflow-first AI 应用。当前完成 **Phase 3：Job Analysis**。没有复制或读取 Waku 项目代码；简历生成留待 Phase 4。
+独立的、面向个人求职的 Workflow-first AI 应用。当前完成 **Phase 3.5A：Live Provider Validation**；保留 Phase 3 Job Analysis，Jev / GLM synthetic smoke 均成功。没有复制或读取 Waku 项目代码；简历生成留待 Phase 4。
 
 ## 本地启动
 
@@ -55,6 +55,7 @@ backend/
     models/
       prompts.py            # 版本化任务与结构化输出
       router.py             # Judge / Generation、fake / replay / live
+      providers.py          # Jev decision / OpenAI-compatible wire adapters
     profile_store.py        # 版本、原始历史、确认与 Evidence 事务
     profile_eval.py         # deterministic 事实对比指标
     workflows/profile.py    # 六节点固定 Profile 图
@@ -116,8 +117,10 @@ uv run python scripts/check_http.py
 - 默认 `AI_MODE=fake`：执行 deterministic diagnostic；Profile 把原文保留为一条 other fact，再逐条原样整理，用于流程检查，不模拟模型提取质量。
 - `AI_MODE=replay`：从 `REPLAY_DIR` 读取合法 fixture，缺少记录明确报错，不自动回退 live。
 - `AI_MODE=live`：启用真实 Provider。启动时检查两个角色的 model/key/base URL 配置。
-- 角色覆盖：`JUDGE_MODEL / JUDGE_BASE_URL / JUDGE_API_KEY` 与 `GENERATION_MODEL / GENERATION_BASE_URL / GENERATION_API_KEY`；未配置时回退 `MODEL / BASE_URL / API_KEY`。
-- 可执行 AI tasks：`diagnostic`（prompt `diagnostic-v1`，128 tokens）、`profile-facts-v1`（Judge）及 `profile-normalize-v1`（Generation，各 6000 output tokens）；temperature=0。
+- Provider：`JUDGE_PROVIDER=jev`、`GENERATION_PROVIDER=openai_compatible`；未显式配置 provider 时保留 OpenAI-compatible 兼容默认。Jev 当前仅支持 diagnostic，业务映射留待 3.5B。
+- OpenAI-compatible 角色覆盖：`JUDGE_MODEL / JUDGE_BASE_URL / JUDGE_API_KEY` 与 `GENERATION_MODEL / GENERATION_BASE_URL / GENERATION_API_KEY`；未配置时回退 `MODEL / BASE_URL / API_KEY`。
+- Jev 必须配置专用 `JUDGE_MODEL / JUDGE_BASE_URL / JUDGE_API_KEY`，不回退共享配置；base URL 包含 version（不含 `/systemone`），model ID 不硬编码。
+- 新增 `judge-diagnostic-v1` / `generation-diagnostic-v1`（各 128 output tokens），只使用 synthetic 输入。原可执行 AI tasks：`diagnostic`（prompt `diagnostic-v1`，128 tokens）、`profile-facts-v1`（Judge）及 `profile-normalize-v1`（Generation，各 6000 output tokens）；temperature=0。
 - `.env`、数据库、个人信息和 secret 不提交 Git。Settings 不返回 secret 或 provider URL。
 
 独立 replay：
@@ -130,13 +133,14 @@ curl -sS http://127.0.0.1:8000/api/debug/replay \
 
 fixture 文件名：`{task}--{prompt_version}--{sha256(canonical_input_json)}.json`，记录 `task`、`prompt_version`、`output`。Canonical JSON 对 key 排序，UTF-8，紧凑 separators。仅手工保存已确认合法的输出；普通调用不会自动保存个人输入或模型输出。
 
-Live smoke 只为未来操作提供入口，本阶段**没有执行**。必须同时配置真实凭据、`AI_MODE=live` 和 `--live`：
+Live smoke 必须同时配置真实凭据、`AI_MODE=live` 和 `--live`，显式选择角色。先 Judge 成功，才执行 Generation；任一失败即 STOP：
 
 ```bash
-AI_MODE=live uv run python -m career_copilot.smoke --live
+AI_MODE=live uv run python -m career_copilot.smoke --live --role judge
+AI_MODE=live uv run python -m career_copilot.smoke --live --role generation
 ```
 
-该命令只调用 Judge diagnostic，不执行职业业务或写入用户数据。Provider 必须支持 `response_format: json_schema`；不支持时明确报错，不做自动降级或 repair loop。
+每条 smoke 仅一次请求，固定 synthetic 输入，保存 diagnostic trace，不读取或写入 Career 业务表，不执行业务 graph。缺任一 live gate 不构造 client。Generation 保留 `json_schema` structured output；Jev 使用原生 state/questions API。常规模型调用仍最多两次尝试，无嵌套重试、fallback 或 repair。默认 `AI_DEBUG_PAYLOADS=0`；本地开启检查后建议恢复。真实结果和限制见 [PHASE_3_5A.md](docs/PHASE_3_5A.md)；本次 Judge `jev-1.13.0` / Generation `glm-5.3-flash` 各一次成功，latency 750.411 / 1085.165 ms，tokens 283+21 / 41+63；真实请求总数为 2，未执行真实业务 workflow。
 
 ## Profile 边界与评估
 

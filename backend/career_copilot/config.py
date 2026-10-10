@@ -8,6 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class ModelConfig(BaseModel):
     role: Literal["judge", "generation"]
+    provider: Literal["jev", "openai_compatible"] = "openai_compatible"
     model: str
     base_url: str
     api_key: SecretStr
@@ -24,6 +25,8 @@ class Settings(BaseSettings):
     api_key: SecretStr = SecretStr("")
     base_url: str = "https://api.openai.com/v1"
     model: str = ""
+    judge_provider: Literal["jev", "openai_compatible"] = "openai_compatible"
+    generation_provider: Literal["openai_compatible"] = "openai_compatible"
     judge_model: str = ""
     judge_base_url: str = ""
     judge_api_key: SecretStr = SecretStr("")
@@ -37,8 +40,11 @@ class Settings(BaseSettings):
             for role in ("judge", "generation"):
                 cfg = self.for_role(role)
                 url = urlsplit(cfg.base_url)
-                if not cfg.model or not cfg.api_key.get_secret_value():
-                    raise ValueError(f"Live {role} requires MODEL and API_KEY configuration")
+                if not cfg.model.strip() or not cfg.api_key.get_secret_value().strip():
+                    raise ValueError(
+                        f"Live {role} requires {role.upper()}_MODEL and "
+                        f"{role.upper()}_API_KEY configuration"
+                    )
                 if url.scheme not in {"http", "https"} or not url.netloc:
                     raise ValueError(f"Invalid {role} BASE_URL")
         return self
@@ -52,8 +58,19 @@ class Settings(BaseSettings):
         return self.debug_enabled and self.ai_debug_payloads
 
     def for_role(self, role: Literal["judge", "generation"]) -> ModelConfig:
+        provider = getattr(self, f"{role}_provider")
+        if provider == "jev":
+            # Never send shared OpenAI credentials to a different provider.
+            return ModelConfig(
+                role=role,
+                provider=provider,
+                model=self.judge_model,
+                base_url=self.judge_base_url,
+                api_key=self.judge_api_key,
+            )
         return ModelConfig(
             role=role,
+            provider=provider,
             model=getattr(self, f"{role}_model") or self.model,
             base_url=getattr(self, f"{role}_base_url") or self.base_url,
             api_key=(

@@ -101,7 +101,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "models": [
                 {
                     "role": role,
-                    "provider": "openai-compatible",
+                    "provider": settings.for_role(role).provider,
                     "model": settings.for_role(role).model or "Not configured",
                     "api_key_configured": bool(settings.for_role(role).api_key.get_secret_value()),
                 }
