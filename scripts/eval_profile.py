@@ -7,6 +7,7 @@ from pathlib import Path
 from career_copilot.business_eval import announce, evaluation_model, failure_report
 from career_copilot.config import Settings
 from career_copilot.errors import CopilotError
+from career_copilot.models.diagnostics import DIAGNOSTICS_ENABLED
 from career_copilot.models.profile import ProfileFacts, validate_facts
 from career_copilot.models.router import AI_OBSERVER
 from career_copilot.profile_eval import evaluate
@@ -45,6 +46,7 @@ def main(argv=None):
     totals, calls, outputs = {}, [], {}
     observed = []
     token = AI_OBSERVER.set(observed.append)
+    diagnostics_token = DIAGNOSTICS_ENABLED.set(settings.payloads_enabled)
     try:
         for case in cases:
             if predictions:
@@ -72,6 +74,7 @@ def main(argv=None):
         raise SystemExit(1) from None
     finally:
         AI_OBSERVER.reset(token)
+        DIAGNOSTICS_ENABLED.reset(diagnostics_token)
     result = redact(
         {
             "cases": len(cases),

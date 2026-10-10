@@ -7,6 +7,7 @@ from uuid import uuid4
 from .config import Settings
 from .database import Database
 from .errors import CopilotError, ErrorCode, WorkflowError
+from .models.diagnostics import DIAGNOSTICS_ENABLED
 from .models.router import AI_OBSERVER, AI_PAYLOAD_OBSERVER
 
 
@@ -81,6 +82,7 @@ class RunTrace:
                 "ai": None,
             }
             ai_payload = {}
+            diagnostics_token = DIAGNOSTICS_ENABLED.set(self.settings.payloads_enabled)
             token = AI_OBSERVER.set(lambda meta: trace.update(ai=meta))
             payload_token = AI_PAYLOAD_OBSERVER.set(
                 ai_payload.update if self.settings.payloads_enabled else None
@@ -109,6 +111,7 @@ class RunTrace:
                     error_code=code.value,
                     validation_result={"status": "failed", "error_code": code.value},
                 )
+                trace["validation_result"].update(getattr(exc, "diagnostics", {}))
                 if self.settings.payloads_enabled:
                     # Exception messages may contain credentials or personal data.
                     trace["debug_payload"] = {
@@ -118,6 +121,7 @@ class RunTrace:
                     }
                 raise CopilotError(code) from exc
             finally:
+                DIAGNOSTICS_ENABLED.reset(diagnostics_token)
                 AI_OBSERVER.reset(token)
                 AI_PAYLOAD_OBSERVER.reset(payload_token)
                 trace["duration_ms"] = round((perf_counter() - started) * 1000, 3)

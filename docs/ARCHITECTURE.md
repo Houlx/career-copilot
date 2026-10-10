@@ -51,6 +51,14 @@ ContextVar 将单次模型调用 metadata 交给当前 node wrapper，finally �
 
 Debug API 仅 development 可用，production/test 均返回 404。这不是 authentication；本地服务默认绑定 loopback，不部署公网。
 
+## Structured output failure stages（Phase 3.5B-R1）
+
+OpenAICompatibleProvider 明确分开 HTTP → provider JSON → envelope/usage → assistant string content → structured JSON → Pydantic；Profile workflow 随后独立执行 business grounding。HTTP/network 继续 MODEL_REQUEST_FAILED，输出错误继续公开 MODEL_OUTPUT_INVALID；原 Profile business error code 不变。内部 metadata 区分 RESPONSE_ENVELOPE_INVALID、STRUCTURED_JSON_INVALID、PYDANTIC_VALIDATION_FAILED、BUSINESS_VALIDATION_FAILED。
+
+只有 development + AI_DEBUG_PAYLOADS=1 提供 loc/type/固定安全消息及受限的 parsed JSON shape，默认只有 stage。Pydantic input/context、原始异常消息、完整失败正文、reasoning/header 均不进入新增诊断。shape 只保存字段/类型，不保存字段值；trace/eval 沿用最终 redaction。Profile validators 仅给原条件命名并记录 rule，不改接受/拒绝语义。模型 stage 进入 AI_OBSERVER/node.ai；后续 business stage 进入 node.validation_result，独立 eval failure report 区分成功 schema 与失败 grounding。
+
+Provider 仍发送原 name/schema/strict=true，仍用 schema.model_validate_json；不自动 strip fence、repair、fallback、coerce 或宽松 schema。官方 GLM 文档未声明当前 json_schema/strict contract，记录 capability mismatch；R1 唯一一次 synthetic 请求实际返回 fence，定位 structured JSON 层失败后停止。完整依据、测试、原失败不可追溯限制和请求计数见 [PHASE_3_5B_R1.md](PHASE_3_5B_R1.md)。
+
 ## Provider and prompt boundary
 
 Phase 3.5B 核对发现 Jev 的 Noul/Choice/Score 不能生成开放文本及动态数组，历史失败记录保留于 [PHASE_3_5B.md](PHASE_3_5B.md)。Phase 3.5B-R 据此调整模型职责：

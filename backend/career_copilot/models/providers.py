@@ -4,10 +4,11 @@ import json
 from typing import Annotated, Literal
 
 import httpx
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from ..config import ModelConfig
 from ..errors import CopilotError, ErrorCode
+from .diagnostics import diagnostic, json_shape
 from .jobs import Scoreability, ScoreabilityInput, ScoreabilityResult, apply_classifications
 from .prompts import JudgeDiagnosticResult, PromptSpec
 
@@ -118,12 +119,43 @@ class OpenAICompatibleProvider(HTTPProvider):
                 },
             },
         )
-        body = response.json()
-        if not isinstance(body, dict):
-            raise ValueError("Expected a structured provider response")
-        usage = TokenUsage.model_validate(body.get("usage") or {})
-        add_usage(meta, usage.prompt_tokens, usage.completion_tokens)
-        return schema.model_validate_json(body["choices"][0]["message"]["content"])
+        meta["http_status"] = response.status_code
+        try:
+            body = response.json()
+        except ValueError as exc:
+            meta.update(diagnostic("RESPONSE_ENVELOPE_INVALID", exc=exc, rule="provider_json"))
+            raise
+        path = ("usage",)
+        try:
+            if not isinstance(body, dict):
+                raise TypeError("Expected response object")
+            usage = TokenUsage.model_validate(body.get("usage") or {})
+            add_usage(meta, usage.prompt_tokens, usage.completion_tokens)
+            path = ("choices", 0, "message", "content")
+            content = body["choices"][0]["message"]["content"]
+            if not isinstance(content, str):
+                raise TypeError("Expected assistant string content")
+        except (ValueError, KeyError, IndexError, TypeError) as exc:
+            meta.update(diagnostic("RESPONSE_ENVELOPE_INVALID", exc=exc, loc=path))
+            raise
+        try:
+            parsed = json.loads(content)
+        except ValueError as exc:
+            meta.update(diagnostic("STRUCTURED_JSON_INVALID", exc=exc, loc=path))
+            meta["assistant_content_kind"] = (
+                "markdown_fence" if content.lstrip().startswith("```") else "invalid_json"
+            )
+            raise
+        try:
+            return schema.model_validate_json(content)
+        except ValidationError as exc:
+            stage = (
+                "STRUCTURED_JSON_INVALID"
+                if any(e["type"] == "json_invalid" for e in exc.errors())
+                else "PYDANTIC_VALIDATION_FAILED"
+            )
+            meta.update(diagnostic(stage, exc=exc, shape=json_shape(parsed)))
+            raise
 
 
 class JevProvider(HTTPProvider):

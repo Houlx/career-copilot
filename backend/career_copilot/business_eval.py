@@ -32,10 +32,16 @@ def announce(model, suite: str, case_count: int, *, live: bool):
 def failure_report(exc, calls, *, live):
     from .errors import ErrorCode
 
+    diagnostics = getattr(exc, "diagnostics", {}) or {
+        key: calls[-1][key]
+        for key in ("failure_stage", "errors", "structured_output_shape", "assistant_content_kind")
+        if calls and key in calls[-1]
+    }
     return {
         "error_code": exc.code.value,
         "request_success": bool(calls) and exc.code != ErrorCode.MODEL_REQUEST_FAILED,
-        "schema_mapping_success": False,
+        "schema_mapping_success": diagnostics.get("failure_stage") == "BUSINESS_VALIDATION_FAILED",
         "live_api_calls": sum(1 + call["retry_count"] for call in calls) if live else 0,
         "calls": calls,
+        **diagnostics,
     }

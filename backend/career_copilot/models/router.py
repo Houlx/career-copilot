@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 
 from ..config import ModelConfig, Settings
 from ..errors import CopilotError, ErrorCode
+from .diagnostics import DIAGNOSTICS_ENABLED
 from .jobs import (
     JobExtraction,
     JobRequirements,
@@ -51,7 +52,8 @@ class ReplayRecord(BaseModel):
 
 
 class RoleModel:
-    def __init__(self, config: ModelConfig, mode: str, replay_dir: Path):
+    def __init__(self, config: ModelConfig, mode: str, replay_dir: Path, *, debug: bool = False):
+        self.debug = debug
         self.config = config
         self.mode = mode
         self.replay_dir = replay_dir
@@ -79,6 +81,7 @@ class RoleModel:
             "latency_ms": 0.0,
             "retry_count": 0,
         }
+        diagnostics_token = DIAGNOSTICS_ENABLED.set(self.debug)
         payload_observer = AI_PAYLOAD_OBSERVER.get()
         if payload_observer:
             payload_observer({"prompt": spec.system, "input": payload})
@@ -189,6 +192,7 @@ class RoleModel:
         except (ValidationError, KeyError, TypeError) as exc:
             raise CopilotError(ErrorCode.MODEL_OUTPUT_INVALID) from exc
         finally:
+            DIAGNOSTICS_ENABLED.reset(diagnostics_token)
             if meta["latency_ms"] == 0.0:
                 meta["latency_ms"] = round((perf_counter() - started) * 1000, 3)
             observer = AI_OBSERVER.get()
@@ -224,7 +228,12 @@ class RoleModel:
 class ModelRouter:
     def __init__(self, settings: Settings, *, replay_only: bool = False):
         mode = "replay" if replay_only else settings.ai_mode
-        self.judge_model = RoleModel(settings.for_role("judge"), mode, settings.replay_dir)
+        self.judge_model = RoleModel(
+            settings.for_role("judge"), mode, settings.replay_dir, debug=settings.payloads_enabled
+        )
         self.generation_model = RoleModel(
-            settings.for_role("generation"), mode, settings.replay_dir
+            settings.for_role("generation"),
+            mode,
+            settings.replay_dir,
+            debug=settings.payloads_enabled,
         )

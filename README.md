@@ -1,6 +1,6 @@
 # Career Copilot
 
-独立的、面向个人求职的 Workflow-first AI 应用。当前 **Phase 3.5B-R 职责重构及离线回归已完成，live 验收未完成**：GLM Profile facts 单 case 返回 MODEL_OUTPUT_INVALID，按停止条件未执行后续 JD/Jev 请求。未开始 Phase 4。
+独立的、面向个人求职的 Workflow-first AI 应用。当前 **Phase 3.5B-R1 诊断完成，live 仍失败并已停止**：唯一一次新的 GLM synthetic Profile education 请求 HTTP 200，但 assistant content 以 markdown fence 开头，定位为 `STRUCTURED_JSON_INVALID`（尚未进入 Pydantic/grounding）。诊断、212 项后端测试和全部离线检查通过；没有继续 JD/Jev 或 Phase 4。详情见 [PHASE_3_5B_R1.md](docs/PHASE_3_5B_R1.md)。
 
 Generation/GLM 负责 Profile facts、normalization、JD requirements 和 matching；Judge/Jev 只负责有限候选上的 scoreability。结果和指标见 [PHASE_3_5B_R.md](docs/PHASE_3_5B_R.md)。原 Jev 开放文本 extraction 的失败探索保留在 [PHASE_3_5B.md](docs/PHASE_3_5B.md)。
 

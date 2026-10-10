@@ -21,7 +21,8 @@ class ErrorCode(StrEnum):
 
 
 class CopilotError(Exception):
-    def __init__(self, code: ErrorCode):
+    def __init__(self, code: ErrorCode, *, diagnostics: dict | None = None):
+        self.diagnostics = diagnostics or {}
         self.code = code
         super().__init__(code.value)
 

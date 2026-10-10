@@ -4,7 +4,17 @@
 
 ## Status
 
-**最新：Phase 3.5B-R 职责重构及离线回归完成，live 验收未完成。已在 live Step 1 失败后停止。提交并确认 clean 后 STOP；未开始 Phase 4。**
+**最新：Phase 3.5B-R1 Structured Output Failure Diagnosis 完成，唯一一次新的 live 请求仍失败，已停止。**
+
+本轮先通过全部离线验证：后端 **212 passed**、前端 **16 passed**、Ruff/format、frontend check/build/audit（0 vulnerabilities）、Profile/Jobs eval（0 live requests）。之后仅调用原 synthetic education 一次，retry=0：GLM `glm-5.3-flash` HTTP 200，6012.51 ms，tokens 113/377/490。明确失败在 `STRUCTURED_JSON_INVALID`，path=`choices.0.message.content`，type=`JSONDecodeError`，assistant_content_kind=`markdown_fence`；未进入 Pydantic 或 business validation。
+
+新增 value-free 分层诊断，外部错误合同保持不变；只有 development + AI_DEBUG_PAYLOADS=1 保存安全的 loc/type/msg/shape。本次 debug 仅对子进程开启，已确认恢复 0；不保存完整失败正文。prompt/schema/业务规则/模型/retry/fallback 均未改变，没有 strip fence 或 repair。
+
+原 3.5B-R 第一次失败无正文，根因不可追溯，不能断言等同于本次 fence 原因。智谱文档仅列出 text/json_object，记录当前 json_schema/strict 请求的 **provider capability mismatch**，不能推断 strict 已执行；没有据此更改请求格式或放宽 schema。
+
+R1 live request count=**1**；连同原 3.5B-R education 请求累计 2 次。详见 [PHASE_3_5B_R1.md](PHASE_3_5B_R1.md) 与 [脱敏结果](../evals/results/phase_3_5b_r/profile-live-r1.json)。提交 `Phase 3.5B-R1` 并确认 clean 后 STOP。后续需用户重新授权 provider contract 处理方案与 live 预算；不能自动继续 JD/Jev、Step 2–4 或 Phase 4。
+
+以下 3.5B-R 状态保留为历史背景：
 
 Generation/GLM：profile-facts-v1（只改 role）、profile-normalize-v1、jd-requirements-v2、matching-v1。Judge/Jev：scoreability-v1。Job graph 为 job-analysis-v2，新增 classify_scoreability，九节点；Jev 一个请求批量 Choice，Python 完整映射校验后继续原有最小 guard。Report/DB/frontend contract、Coverage、全量 Evidence matching 不变。旧 jd-extract-v1 与历史 replay 保留。
 
@@ -12,11 +22,11 @@ Generation/GLM：profile-facts-v1（只改 role）、profile-normalize-v1、jd-r
 
 本阶段真实请求 **1 次**，无重试：GLM `glm-5.3-flash`，synthetic Profile education case，HTTP 成功但严格输出校验失败 `MODEL_OUTPUT_INVALID`；3878.029 ms，tokens 113/243/356。按照用户规定“Step 1 失败 → STOP”，没有执行 JD extraction、Jev 单 case 或 8-case benchmark；Jev live 质量/latency/tokens 暂无数据。没有 prompt tuning、真实用户数据或真实业务 graph。详见 [PHASE_3_5B_R.md](PHASE_3_5B_R.md) 和 [脱敏结果](../evals/results/phase_3_5b_r/profile-live.json)。失败正文未保留，具体字段原因未知。
 
-下一阶段需明确授权调查 GLM 结构化输出失败并重新确认 live 请求预算；不要自动重试或启动 Phase 4。原 [PHASE_3_5B.md](PHASE_3_5B.md) 作为 Jev 开放文本 extraction 能力阻塞记录保留。历史 Phase 3.5A diagnostic 两次成功仅证明 wire smoke，不能替代业务验收。
+该历史调查已在 R1 执行一次，后续边界以上文 R1 为准；不要自动重试或启动 Phase 4。原 [PHASE_3_5B.md](PHASE_3_5B.md) 作为 Jev 开放文本 extraction 能力阻塞记录保留。历史 Phase 3.5A diagnostic 两次成功仅证明 wire smoke，不能替代业务验收。
 
 ## Read first next session
 
-1. 本文及 `docs/PHASE_3_5B_R.md`。
+1. 本文及 `docs/PHASE_3_5B_R1.md`，再读历史 `docs/PHASE_3_5B_R.md`。
 2. `docs/PHASE_3_5B.md`：历史接口能力发现。
 3. `docs/PHASE_3_5A.md`、`docs/PHASE_3.md`、`docs/ARCHITECTURE.md`；Profile 规则见 `docs/PHASE_2.md`。
 4. 按获授权阶段定向读代码，不重新全仓库审计。

@@ -1,0 +1,49 @@
+{
+  "error_code": "MODEL_OUTPUT_INVALID",
+  "request_success": true,
+  "schema_mapping_success": false,
+  "live_api_calls": 1,
+  "calls": [
+    {
+      "model_role": "generation",
+      "provider": "openai-compatible",
+      "model_name": "glm-5.3-flash",
+      "prompt_version": "profile-facts-v1",
+      "temperature": 0,
+      "input_tokens": 113,
+      "output_tokens": 377,
+      "total_tokens": 490,
+      "latency_ms": 6012.51,
+      "retry_count": 0,
+      "http_status": 200,
+      "failure_stage": "STRUCTURED_JSON_INVALID",
+      "errors": [
+        {
+          "loc": [
+            "choices",
+            0,
+            "message",
+            "content"
+          ],
+          "type": "JSONDecodeError",
+          "msg": "Response does not satisfy provider contract"
+        }
+      ],
+      "assistant_content_kind": "markdown_fence"
+    }
+  ],
+  "failure_stage": "STRUCTURED_JSON_INVALID",
+  "errors": [
+    {
+      "loc": [
+        "choices",
+        0,
+        "message",
+        "content"
+      ],
+      "type": "JSONDecodeError",
+      "msg": "Response does not satisfy provider contract"
+    }
+  ],
+  "assistant_content_kind": "markdown_fence"
+}
