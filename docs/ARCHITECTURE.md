@@ -25,11 +25,21 @@ Phase 1 的 dummy graph 只有固定边：`START → prepare_input → mutate_st
 
 Phase 3.5B-R 的独立九节点 Job Analysis graph：确认门禁 → Generation extraction → validation → Jev scoreability → Python guard → 全量证据 Generation matching → validation → Python Coverage → 原子保存；Phase 4 已新增独立七节点 Resume Generation graph。用户确认和显式生成简历的授权边界由 API/Python 检查。不存在 Agent loop、ToolRegistry、模型动态选边、MCP、RAG、embedding、auth 或多用户设计。
 
-## Generation provider inference configuration (Phase 4.2)
+## Generation task inference policy (Phase 4.3)
 
-`GENERATION_REASONING_EFFORT` 属于 Provider inference configuration：Settings → ModelConfig → ModelRouter → OpenAICompatibleProvider constructor/config → request body → trace metadata。严格可选 low/high/max，默认 None，unset 时 wire 字段 absent。仅显式配置 Generation，禁止模型名或 URL 自动检测；不进入业务 workflow，不改变上方 Profile/Job/Resume graph。
+```text
+Task policy (PromptSpec.reasoning_effort)
+    ↓
+Role-level fallback (GENERATION_REASONING_EFFORT)
+    ↓
+Provider default (wire field absent)
+```
 
-Settings API 的 Generation allowlist 和只读页面显示配置；AI observer 在 success/failure/fake/replay 均记录 reasoning_effort。该值是配置，不是服务端执行确认。Judge/Jev 语义不变，不存 hidden reasoning，不扩 usage token schema。官方来源、JSON schema 文档差异及 0-live 验证见 [PHASE_4_2.md](PHASE_4_2.md)。本地配置未启用 low。
+这是 deterministic inference configuration。唯一显式 task policy 为 profile-facts-v1=low，其余 Generation task 默认 None。RoleModel 每次调用解析 effective reasoning/source，live 时复制 role ModelConfig 注入 Provider，不修改共享 role 配置。task override 优先；role-level low/high/max 能力保留，默认 unset。Workflow 只调用 task，Provider 不知道业务 task policy。没有模型名/URL 检测，没有 Agent 决策、模型动态选 reasoning、self-reflection 或 dynamic graph routing；业务图不变。
+
+成功/失败/fake/replay trace 记录 reasoning_effort 和 reasoning_source=task/role/provider_default；表示最终请求配置，不是服务端执行确认。不存 hidden reasoning，不扩 token schema。Canonical replay hash 仍只由 task/version/business payload 决定，fixtures 无变化。Judge/Jev 不变。
+
+Settings API 保留 role 配置，新增只读 task_policies，显式仅序列化 task name 与 reasoning policy；不返回完整 PromptSpec、正文、URL 或 secret。前端只读。角色 timeout 默认 30/30 秒、本地 60/30 秒；本地全局 reasoning override 已注释。实验及边界见 [PHASE_4_3.md](PHASE_4_3.md)。
 
 ## State and persistence
 

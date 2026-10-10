@@ -139,6 +139,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 }
                 for role in ("judge", "generation")
             ],
+            "task_policies": {
+                task: {"reasoning_effort": spec.reasoning_effort}
+                for task, spec in PROMPTS.items()
+                if spec.role == "generation" and spec.reasoning_effort is not None
+            },
             "prompts": {task: spec.version for task, spec in PROMPTS.items()},
         }
 

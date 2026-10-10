@@ -12,6 +12,7 @@ export interface Settings {
     reasoning_effort?: 'low' | 'high' | 'max' | null;
     structured_output_mode?: 'json_schema' | 'json_object' | null;
   }[];
+  task_policies?: Record<string, { reasoning_effort: 'low' | 'high' | 'max' }>;
   prompts: Record<string, string>;
 }
 export interface Run {

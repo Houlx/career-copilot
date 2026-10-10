@@ -3,6 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
+from ..config import ReasoningEffort
+
 
 class DiagnosticResult(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
@@ -23,6 +25,7 @@ class PromptSpec:
     system: str
     max_output_tokens: int
     temperature: float = 0
+    reasoning_effort: ReasoningEffort | None = None
 
 
 # Explicit tasks; no model-directed dispatch.
@@ -119,6 +122,7 @@ PROMPTS = {
     ),
     "profile-facts-v1": PromptSpec(
         version="profile-facts-v1",
+        reasoning_effort="low",
         role="generation",
         system="Extract only explicit career facts from raw_input into facts. Each fact has "
         "type (education/work/project/skill/other), title, content, source_quote. "

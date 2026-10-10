@@ -161,6 +161,18 @@ function SettingsPage({ settings }: { settings: Settings }) {
         ))}
       </div>
       <section className="card">
+        <h2>Task inference policies</h2>
+        <p>任务策略优先于角色配置；其余任务使用角色配置或 Provider 默认行为。</p>
+        <dl>
+          {Object.entries(settings.task_policies ?? {}).map(([task, policy]) => (
+            <div key={task}>
+              <dt>{task}</dt>
+              <dd>{policy.reasoning_effort}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+      <section className="card">
         <h2>Prompt 版本</h2>
         <Json value={settings.prompts} />
       </section>

@@ -16,6 +16,7 @@ const settings = {
       timeout_seconds: 30,
     },
   ],
+  task_policies: { 'profile-facts-v1': { reasoning_effort: 'low' } },
   prompts: { diagnostic: 'diagnostic-v1' },
 };
 const detail = {
@@ -144,6 +145,11 @@ describe('Generation reasoning configuration', () => {
     expect(
       screen.getByText(effort ? effort[0].toUpperCase() + effort.slice(1) : 'Default'),
     ).toBeInTheDocument();
+    expect(screen.getByText('Task inference policies')).toBeInTheDocument();
+    expect(screen.getByText('profile-facts-v1')).toBeInTheDocument();
+    expect(screen.getByText('low')).toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(vi.mocked(fetch).mock.calls.every(([, options]) => options === undefined)).toBe(true);
   });
 });

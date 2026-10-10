@@ -86,7 +86,18 @@ class RoleModel:
         if self.config.provider == "openai_compatible":
             meta["structured_output_mode"] = self.config.structured_output_mode
         if self.config.role == "generation":
-            meta["reasoning_effort"] = self.config.reasoning_effort
+            meta["reasoning_effort"] = (
+                spec.reasoning_effort
+                if spec.reasoning_effort is not None
+                else self.config.reasoning_effort
+            )
+            meta["reasoning_source"] = (
+                "task"
+                if spec.reasoning_effort is not None
+                else "role"
+                if self.config.reasoning_effort is not None
+                else "provider_default"
+            )
         diagnostics_token = DIAGNOSTICS_ENABLED.set(self.debug)
         payload_observer = AI_PAYLOAD_OBSERVER.get()
         if payload_observer:
@@ -211,10 +222,12 @@ class RoleModel:
         self, spec: PromptSpec, payload: dict, schema: type[T], meta: dict, max_attempts: int
     ) -> T:
         # Instantiate adapters only on the live path. One retry owner; no SDK retries.
+        # Resolve per invocation without mutating the shared role configuration.
+        config = self.config.model_copy(update={"reasoning_effort": meta.get("reasoning_effort")})
         provider = (
-            JevProvider(self.config, timeout_seconds=self.config.timeout_seconds)
+            JevProvider(config, timeout_seconds=config.timeout_seconds)
             if self.config.provider == "jev"
-            else OpenAICompatibleProvider(self.config, timeout_seconds=self.config.timeout_seconds)
+            else OpenAICompatibleProvider(config, timeout_seconds=config.timeout_seconds)
         )
         provider.validate_task(spec, schema)
         for attempt in range(max_attempts):

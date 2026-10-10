@@ -28,6 +28,25 @@ def main():
         config.raise_for_status()
         assert config.json()["ai_mode"] == "fake", "Run smoke check with AI_MODE=fake"
         assert config.json()["debug_enabled"], "Run smoke check in development"
+        assert config.json()["task_policies"] == {"profile-facts-v1": {"reasoning_effort": "low"}}
+        role_effort = next(
+            model["reasoning_effort"]
+            for model in config.json()["models"]
+            if model["role"] == "generation"
+        )
+
+        def check_policies(nodes):
+            for node in nodes:
+                ai = node["ai"]
+                if ai and ai["model_role"] == "generation":
+                    is_facts = ai["prompt_version"] == "profile-facts-v1"
+                    assert ai["reasoning_effort"] == ("low" if is_facts else role_effort)
+                    assert ai["reasoning_source"] == (
+                        "task" if is_facts else "role" if role_effort else "provider_default"
+                    )
+                    assert ai["provider"] == "fake"
+                    assert ai["total_tokens"] == 0
+
         page = frontend.get("/debug/runs")
         page.raise_for_status()
         assert '<div id="root"></div>' in page.text
@@ -68,6 +87,7 @@ def main():
             draft = result["profile"]
             assert not draft["confirmed"] and draft["raw_input"] == raw
             nodes = backend.get(f"/api/debug/runs/{result['run_id']}").json()["nodes"]
+            check_policies(nodes)
             assert len(nodes) == 6
             assert nodes[1]["ai"]["prompt_version"] == "profile-facts-v1"
             assert nodes[3]["ai"]["prompt_version"] == "profile-normalize-v1"
@@ -106,6 +126,7 @@ def main():
             assert job["requirements"][0]["match"]["evidence"][0]["normalized_content"]
             assert backend.get(f"/api/jobs/{job['id']}").json()["job"] == job
             nodes = backend.get(f"/api/debug/runs/{result['run_id']}").json()["nodes"]
+            check_policies(nodes)
             assert len(nodes) == 9
             assert nodes[1]["ai"]["prompt_version"] == "jd-requirements-v2"
             assert nodes[3]["ai"]["prompt_version"] == "scoreability-v1"
@@ -155,6 +176,7 @@ def main():
                 assert (
                     len(nodes) == 7 and nodes[1]["ai"]["prompt_version"] == "resume-generation-v1"
                 )
+                check_policies(nodes)
                 assert nodes[3]["validation_result"]["numeric_grounding_failure_count"] == 0
             post(
                 "/api/profile/raw",
@@ -178,6 +200,7 @@ def main():
                 assert backend.get(f"/api/jobs/{job['id']}").status_code == 200
     if args.resume:
         print("PASS: Resume generation / grounding / GET / outdated / delete; 0 live requests")
+    print("PASS: Settings task policy / effective reasoning / reasoning source in traces")
     print("PASS: HTTP → Vite proxy → FastAPI → LangGraph → SQLite → trace response")
     print("PASS: debug UI shell / node diff / standalone replay; 0 live API calls")
     if args.jobs:

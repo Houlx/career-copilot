@@ -2,7 +2,20 @@
 
 更新日期：2026-10-10（Asia/Shanghai）
 
-## Current status — Phase 4.2
+## Current status — Phase 4.3
+
+**Phase 4.3 完成：profile-facts-v1 唯一显式 low；task-specific → role-level fallback → provider default。0 live requests，没有 Phase 5。** 此状态优先于下方历史记录。
+
+- PromptSpec 集中 policy，Router 每次调用解析并复制 effective ModelConfig；业务 workflow 与 Provider 无 task-specific 分支。其余 Generation task 未设置 override，保留 Phase 4.2 role fallback。
+- Settings 安全只读 task_policies；trace reasoning_effort/source 覆盖 success/failure/fake/replay，不保存 hidden reasoning、不扩 token schema。
+- 用户已通过浏览器完成三次 low 实验，数据及人工质量观察见 [PHASE_4_3.md](PHASE_4_3.md)。Agent 没有重跑 Test 1，没有读取真实 Profile。
+- 本地 `.env` 全局 reasoning assignment 已注释，未提交；timeout 仍 60/30 秒。Prompt/schema/model/retry/output limits/fixtures 不变。
+- 验证：388 backend / 25 frontend tests；Ruff check/format、frontend check/build、audit（0 vulnerabilities）通过；Profile 10-case、Jobs 12/8/5-case、Resume 6-case replay eval 全通过。独立端口 + 临时空 DB fake HTTP --resume 验证 Profile/Job/Resume/Settings/trace 与 effective policy，通过后临时服务/DB 已清理。所有自动验证及 Agent live calls=0。
+- 用户下一步完整重启 backend，核对 /api/settings 的 role=null 与 facts task=low；localhost:5173 同一 Test 1 trace 应为 low/task，Resume 应为 null/provider_default（无 role override 时）。详细步骤见阶段文档。
+
+下一会话先读 [PHASE_4_3.md](PHASE_4_3.md)。逐 task reasoning 评估与 retry UX 留待未来独立授权；本阶段提交 `Phase 4.3` 并确认 clean 后 STOP。
+
+## Historical status — Phase 4.2
 
 **Phase 4.2 完成：官方 capability gate 通过，Generation 可选 reasoning 配置已接入，默认 unset；本阶段 0 live requests，没有 Phase 5。** 此状态优先于下方历史记录。
 
