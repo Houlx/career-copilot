@@ -1,0 +1,222 @@
+{
+  "reviewed_fixture_metrics": {
+    "scoreability": {
+      "cases": 8,
+      "task": "scoreability-v1",
+      "metrics": {
+        "SCORED_correct": 2,
+        "SCORED_total": 2,
+        "NEEDS_CONFIRMATION_correct": 2,
+        "NEEDS_CONFIRMATION_total": 2,
+        "NON_SCORABLE_correct": 4,
+        "NON_SCORABLE_total": 4
+      },
+      "rates": {
+        "correct": 8,
+        "total": 8,
+        "overall_accuracy": 1.0,
+        "SCORED_accuracy": 1.0,
+        "NEEDS_CONFIRMATION_accuracy": 1.0,
+        "NON_SCORABLE_accuracy": 1.0
+      },
+      "outputs": {
+        "score-0": {
+          "raw": [
+            {
+              "text": "身体健康",
+              "importance": "required",
+              "category": "personal_trait",
+              "scoreability": "NON_SCORABLE"
+            }
+          ],
+          "guarded": [
+            {
+              "text": "身体健康",
+              "importance": "required",
+              "category": "personal_trait",
+              "scoreability": "NON_SCORABLE"
+            }
+          ],
+          "guard_adjusted": false
+        },
+        "score-1": {
+          "raw": [
+            {
+              "text": "吃苦耐劳",
+              "importance": "required",
+              "category": "personal_trait",
+              "scoreability": "NON_SCORABLE"
+            }
+          ],
+          "guarded": [
+            {
+              "text": "吃苦耐劳",
+              "importance": "required",
+              "category": "personal_trait",
+              "scoreability": "NON_SCORABLE"
+            }
+          ],
+          "guard_adjusted": false
+        },
+        "score-2": {
+          "raw": [
+            {
+              "text": "爱岗敬业",
+              "importance": "required",
+              "category": "personal_trait",
+              "scoreability": "NON_SCORABLE"
+            }
+          ],
+          "guarded": [
+            {
+              "text": "爱岗敬业",
+              "importance": "required",
+              "category": "personal_trait",
+              "scoreability": "NON_SCORABLE"
+            }
+          ],
+          "guard_adjusted": false
+        },
+        "score-3": {
+          "raw": [
+            {
+              "text": "道德品质",
+              "importance": "required",
+              "category": "personal_trait",
+              "scoreability": "NON_SCORABLE"
+            }
+          ],
+          "guarded": [
+            {
+              "text": "道德品质",
+              "importance": "required",
+              "category": "personal_trait",
+              "scoreability": "NON_SCORABLE"
+            }
+          ],
+          "guard_adjusted": false
+        },
+        "score-4": {
+          "raw": [
+            {
+              "text": "接受出差",
+              "importance": "required",
+              "category": "logistics",
+              "scoreability": "NEEDS_CONFIRMATION"
+            }
+          ],
+          "guarded": [
+            {
+              "text": "接受出差",
+              "importance": "required",
+              "category": "logistics",
+              "scoreability": "NEEDS_CONFIRMATION"
+            }
+          ],
+          "guard_adjusted": false
+        },
+        "score-5": {
+          "raw": [
+            {
+              "text": "接受搬迁",
+              "importance": "required",
+              "category": "logistics",
+              "scoreability": "NEEDS_CONFIRMATION"
+            }
+          ],
+          "guarded": [
+            {
+              "text": "接受搬迁",
+              "importance": "required",
+              "category": "logistics",
+              "scoreability": "NEEDS_CONFIRMATION"
+            }
+          ],
+          "guard_adjusted": false
+        },
+        "score-6": {
+          "raw": [
+            {
+              "text": "Python",
+              "importance": "required",
+              "category": "skill",
+              "scoreability": "SCORED"
+            }
+          ],
+          "guarded": [
+            {
+              "text": "Python",
+              "importance": "required",
+              "category": "skill",
+              "scoreability": "SCORED"
+            }
+          ],
+          "guard_adjusted": false
+        },
+        "score-7": {
+          "raw": [
+            {
+              "text": "与产品、测试、算法团队协作交付",
+              "importance": "required",
+              "category": "capability",
+              "scoreability": "SCORED"
+            }
+          ],
+          "guarded": [
+            {
+              "text": "与产品、测试、算法团队协作交付",
+              "importance": "required",
+              "category": "capability",
+              "scoreability": "SCORED"
+            }
+          ],
+          "guard_adjusted": false
+        }
+      },
+      "calls": [
+        {
+          "model_role": "judge",
+          "provider": "jev",
+          "model_name": "jev-1.13.0",
+          "prompt_version": "scoreability-v1",
+          "temperature": 0,
+          "input_tokens": 2122,
+          "output_tokens": 389,
+          "total_tokens": 2511,
+          "latency_ms": 527.18,
+          "retry_count": 0,
+          "provider_metadata": {
+            "response_model": "jev-1.13.0",
+            "question_count": 8,
+            "request_id": "req_01a12437968a78b7ae11a99b6fe11a09"
+          }
+        }
+      ],
+      "request_count": 1,
+      "request_success": true,
+      "schema_mapping_success": true,
+      "latency_ms": 527.18,
+      "input_tokens": 2122,
+      "output_tokens": 389,
+      "total_tokens": 2511,
+      "retry_count": 0,
+      "raw": {
+        "correct": 8,
+        "total": 8,
+        "overall_accuracy": 1.0,
+        "SCORED_accuracy": 1.0,
+        "NEEDS_CONFIRMATION_accuracy": 1.0,
+        "NON_SCORABLE_accuracy": 1.0
+      },
+      "guarded": {
+        "correct": 8,
+        "total": 8,
+        "overall_accuracy": 1.0,
+        "SCORED_accuracy": 1.0,
+        "NEEDS_CONFIRMATION_accuracy": 1.0,
+        "NON_SCORABLE_accuracy": 1.0
+      }
+    }
+  },
+  "live_api_calls": 1
+}

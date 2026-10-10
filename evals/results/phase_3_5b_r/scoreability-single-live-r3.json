@@ -1,0 +1,89 @@
+{
+  "reviewed_fixture_metrics": {
+    "scoreability": {
+      "cases": 1,
+      "task": "scoreability-v1",
+      "metrics": {
+        "SCORED_correct": 0,
+        "SCORED_total": 0,
+        "NEEDS_CONFIRMATION_correct": 0,
+        "NEEDS_CONFIRMATION_total": 0,
+        "NON_SCORABLE_correct": 1,
+        "NON_SCORABLE_total": 1
+      },
+      "rates": {
+        "correct": 1,
+        "total": 1,
+        "overall_accuracy": 1.0,
+        "SCORED_accuracy": null,
+        "NEEDS_CONFIRMATION_accuracy": null,
+        "NON_SCORABLE_accuracy": 1.0
+      },
+      "outputs": {
+        "score-0": {
+          "raw": [
+            {
+              "text": "身体健康",
+              "importance": "required",
+              "category": "personal_trait",
+              "scoreability": "NON_SCORABLE"
+            }
+          ],
+          "guarded": [
+            {
+              "text": "身体健康",
+              "importance": "required",
+              "category": "personal_trait",
+              "scoreability": "NON_SCORABLE"
+            }
+          ],
+          "guard_adjusted": false
+        }
+      },
+      "calls": [
+        {
+          "model_role": "judge",
+          "provider": "jev",
+          "model_name": "jev-1.13.0",
+          "prompt_version": "scoreability-v1",
+          "temperature": 0,
+          "input_tokens": 495,
+          "output_tokens": 51,
+          "total_tokens": 546,
+          "latency_ms": 550.898,
+          "retry_count": 0,
+          "provider_metadata": {
+            "response_model": "jev-1.13.0",
+            "question_count": 1,
+            "request_id": "req_01a124377f3c79f49d38e2530958a478"
+          }
+        }
+      ],
+      "request_count": 1,
+      "request_success": true,
+      "schema_mapping_success": true,
+      "latency_ms": 550.898,
+      "input_tokens": 495,
+      "output_tokens": 51,
+      "total_tokens": 546,
+      "retry_count": 0,
+      "raw": {
+        "correct": 1,
+        "total": 1,
+        "overall_accuracy": 1.0,
+        "SCORED_accuracy": null,
+        "NEEDS_CONFIRMATION_accuracy": null,
+        "NON_SCORABLE_accuracy": 1.0
+      },
+      "guarded": {
+        "correct": 1,
+        "total": 1,
+        "overall_accuracy": 1.0,
+        "SCORED_accuracy": null,
+        "NEEDS_CONFIRMATION_accuracy": null,
+        "NON_SCORABLE_accuracy": 1.0
+      }
+    }
+  },
+  "live_api_calls": 1
+}

@@ -4,7 +4,19 @@
 
 ## Status
 
-**最新：Phase 3.5B-R2 Provider Contract Adaptation 完成，唯一一次新 synthetic Profile live 通过四层验证，已停止。**
+**Phase 3.5B-R3 Step 2–4 Live Acceptance 完成，已停止，未开始 Phase 4。**
+
+R2 已验证 GLM json_object Profile contract。本轮 GLM `openai-compatible / glm-5.3-flash / json_object` 的 JD jd-01 通过 HTTP 200、JSON parsing、严格 Pydantic 及原 JD validation：title=`Synthetic role 1`，1 个 `Python / required / skill` requirement。exact metrics：requirement_missing=0、unsupported_addition=0、importance_correct/total=1/1、category_correct/total=1/1，两个 accuracy 均 1.0。title 与 reference 相同，但现有 metrics 不评估 title。
+
+Jev `jev-1.13.0` native Choice 单例 score-0（身体健康）raw/guarded/reference 均 NON_SCORABLE。8-case reviewed benchmark 合并为一次请求，raw=8/8、guarded=8/8（均 100%）；SCORED=2/2、NEEDS_CONFIRMATION=2/2、NON_SCORABLE=4/4（raw/guarded 相同）。guard corrected=0、harmed=0，全部 guard_adjusted=false。
+
+JD / Jev single / Jev batch latency=7952.355 / 550.898 / 527.180 ms；input/output/total tokens=151/547/698、495/51/546、2122/389/2511。实际请求数 **3**，retry 全为 0；合计 input/output/total tokens=2768/987/3755，调用 latency 合计 9030.433 ms。所有 request_success/schema_mapping_success=true。
+
+详见 [PHASE_3_5B_R3.md](PHASE_3_5B_R3.md) 的逐 case、结果链接和限制。仅文档/result 变化，未重跑完整 regression；无网络结果核验通过。AI_DEBUG_PAYLOADS=0，无真实用户数据、业务 graph/DB、normalization/matching live、prompt tuning 或 guard 扩展。100% 仅描述这 8 个 synthetic cases。提交 Phase 3.5B-R3、确认 clean 后 STOP，没有额外 live 授权。
+
+以下 R2 及更早状态保留为当时记录；其中未执行 JD/Jev 的说明为历史，R3 为最新状态：
+
+**历史：Phase 3.5B-R2 Provider Contract Adaptation 完成，唯一一次新 synthetic Profile live 通过四层验证，已停止。**
 
 Generation structured-output capability 显式可配置：`GENERATION_STRUCTURED_OUTPUT=json_schema|json_object`，默认 json_schema，保留旧 strict/schema wire request；本地 GLM `.env` 显式为 json_object。两种模式本地严格 schema/grounding、R1 failure diagnostics 共用且未放宽；prompt、fixture、业务 validators 未改。Settings API/页面和 AI metadata 展示 structured_output_mode，Jev 配置与原生 contract 不变。
 
@@ -36,7 +48,7 @@ Generation/GLM：profile-facts-v1（只改 role）、profile-normalize-v1、jd-r
 
 ## Read first next session
 
-1. 本文及 `docs/PHASE_3_5B_R2.md`，再读历史 R1/3.5B-R 文档。
+1. 本文及 `docs/PHASE_3_5B_R3.md`，再读 R2 及历史 R1/3.5B-R 文档。
 2. `docs/PHASE_3_5B.md`：历史接口能力发现。
 3. `docs/PHASE_3_5A.md`、`docs/PHASE_3.md`、`docs/ARCHITECTURE.md`；Profile 规则见 `docs/PHASE_2.md`。
 4. 按获授权阶段定向读代码，不重新全仓库审计。
@@ -114,4 +126,4 @@ npm --prefix frontend run dev
 
 ## Commit / stop
 
-commit hash 用 `git log -1 --oneline` 获取，避免将自身 hash 写入文档。本轮记录 Step 1 失败及未完成验收，提交已验证实现与文档、确认 working tree clean 后 STOP。不要自动补发 live 请求，不开始 Phase 4。
+commit hash 用 `git log -1 --oneline` 获取，避免将自身 hash 写入文档。本轮 R3 已完成 Step 2–4，提交文档/result 并确认 working tree clean 后 STOP。历史 Step 1 失败已由 R1 诊断、R2 contract 适配承接。不要自动补发 live 请求，不开始 Phase 4。

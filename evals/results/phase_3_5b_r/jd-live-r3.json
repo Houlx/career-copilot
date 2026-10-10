@@ -1,0 +1,57 @@
+{
+  "reviewed_fixture_metrics": {
+    "jd_extraction": {
+      "cases": 1,
+      "task": "jd-requirements-v2",
+      "metrics": {
+        "requirement_missing": 0,
+        "unsupported_addition": 0,
+        "importance_correct": 1,
+        "importance_total": 1,
+        "category_correct": 1,
+        "category_total": 1
+      },
+      "rates": {
+        "importance_accuracy": 1.0,
+        "category_accuracy": 1.0
+      },
+      "outputs": {
+        "jd-01": {
+          "title": "Synthetic role 1",
+          "requirements": [
+            {
+              "text": "Python",
+              "importance": "required",
+              "category": "skill"
+            }
+          ]
+        }
+      },
+      "calls": [
+        {
+          "model_role": "generation",
+          "provider": "openai-compatible",
+          "model_name": "glm-5.3-flash",
+          "prompt_version": "jd-requirements-v2",
+          "temperature": 0,
+          "input_tokens": 151,
+          "output_tokens": 547,
+          "total_tokens": 698,
+          "latency_ms": 7952.355,
+          "retry_count": 0,
+          "structured_output_mode": "json_object",
+          "http_status": 200
+        }
+      ],
+      "request_count": 1,
+      "request_success": true,
+      "schema_mapping_success": true,
+      "latency_ms": 7952.355,
+      "input_tokens": 151,
+      "output_tokens": 547,
+      "total_tokens": 698,
+      "retry_count": 0
+    }
+  },
+  "live_api_calls": 1
+}

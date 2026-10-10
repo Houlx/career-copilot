@@ -57,7 +57,19 @@ Provider wire format 与业务 schema 分层。ModelConfig.structured_output_mod
 
 两种模式共享 R1 的解析、严格 schema.model_validate_json 和后续 business grounding；不 strip fence、repair、coerce 或 fallback。原 invoke 仍携带业务 schema，PromptSpec 不变。Settings API models 与 AI metadata 新增 structured_output_mode；Jev 的 Settings 字段为 null，trace 不伪装成 JSON 输出。前端 Settings 展示该配置值。Profile eval 成功分支显式记录 schema_mapping_success/business_validation_success。
 
-R2 唯一一次原 education synthetic live 已通过 HTTP/JSON/Pydantic/business，但 exact eval 标题差异仍计 mismatch；后续任务尚未 live 验收。实现、237/16 项测试和完整结果见 [PHASE_3_5B_R2.md](PHASE_3_5B_R2.md)。以下 R1 保留为诊断设计和历史失败依据。
+R2 唯一一次原 education synthetic live 已通过 HTTP/JSON/Pydantic/business，但 exact eval 标题差异仍计 mismatch；R3 已完成 JD/Jev Step 2–4 live baseline，详见下节。实现、237/16 项测试和完整结果见 [PHASE_3_5B_R2.md](PHASE_3_5B_R2.md)。以下 R1 保留为诊断设计和历史失败依据。
+
+## Live acceptance baseline（Phase 3.5B-R3）
+
+**Phase 3.5B-R3 Step 2–4 Live Acceptance 完成，已停止，未开始 Phase 4。**
+
+R2 已验证 GLM json_object Profile contract。本轮 GLM `openai-compatible / glm-5.3-flash / json_object` 的 JD jd-01 通过 HTTP 200、JSON parsing、严格 Pydantic 及原 JD validation：title=`Synthetic role 1`，1 个 `Python / required / skill` requirement。exact metrics：requirement_missing=0、unsupported_addition=0、importance_correct/total=1/1、category_correct/total=1/1，两个 accuracy 均 1.0。title 与 reference 相同，但现有 metrics 不评估 title。
+
+Jev `jev-1.13.0` native Choice 单例 score-0（身体健康）raw/guarded/reference 均 NON_SCORABLE。8-case reviewed benchmark 合并为一次请求，raw=8/8、guarded=8/8（均 100%）；SCORED=2/2、NEEDS_CONFIRMATION=2/2、NON_SCORABLE=4/4（raw/guarded 相同）。guard corrected=0、harmed=0，全部 guard_adjusted=false。
+
+JD / Jev single / Jev batch latency=7952.355 / 550.898 / 527.180 ms；input/output/total tokens=151/547/698、495/51/546、2122/389/2511。实际请求数 **3**，retry 全为 0；合计 input/output/total tokens=2768/987/3755，调用 latency 合计 9030.433 ms。所有 request_success/schema_mapping_success=true。
+
+仅既有 synthetic eval，无业务 graph/DB 访问、真实用户数据或 normalization/matching live，AI_DEBUG_PAYLOADS=0。JD 业务 validator 就是 JobRequirements.model_validate，无另加 grounding 校验。没有改代码/schema/prompts/guard，未重跑完整 regression；结果本地核验通过。当前 8-case 分数不代表总体准确率，逐 case 及结果见 [PHASE_3_5B_R3.md](PHASE_3_5B_R3.md)。
 
 ## Structured output failure stages（Phase 3.5B-R1）
 
@@ -83,7 +95,7 @@ Python
 └─ requirement IDs / validation / minimal safety guard / evidence / coverage
 ```
 
-只拆分 scoreability，不迁移其他判断。实现与离线回归完成，但 GLM Profile live Step 1 结构化输出失败后停止；后续 live 未执行，详见 [PHASE_3_5B_R.md](PHASE_3_5B_R.md)。
+只拆分 scoreability，不迁移其他判断。职责重构及离线回归完成。原 Step 1 失败记录见 [PHASE_3_5B_R.md](PHASE_3_5B_R.md)；R2 已验证 Profile contract，R3 已完成 JD/Jev Step 2–4，详见 [PHASE_3_5B_R3.md](PHASE_3_5B_R3.md)。
 
 Settings 在应用构造时加载一次，角色专用配置优先，共享配置回退。Node 仅接受注入的依赖，不直接读取环境变量。
 

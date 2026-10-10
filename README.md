@@ -1,6 +1,6 @@
 # Career Copilot
 
-独立的、面向个人求职的 Workflow-first AI 应用。当前 **Phase 3.5B-R2 Provider contract 适配完成**：GLM 显式使用 `json_object`，原本地严格 schema/grounding 校验不变，唯一一次 synthetic Profile education live 已通过 HTTP、JSON、Pydantic 和 business validation。后端 237 项、前端 16 项及全部离线检查通过。已停止，未继续 JD/Jev 或 Phase 4；这不代表 live 质量满分或后续任务验收完成。详情见 [PHASE_3_5B_R2.md](docs/PHASE_3_5B_R2.md)。
+独立的、面向个人求职的 Workflow-first AI 应用。当前 **Phase 3.5B-R3 Step 2–4 Live Acceptance 完成**：R2 已验证 GLM `json_object` Profile contract，本轮 JD 单例及 Jev 单例/8-case batch 均成功。JD exact missing/addition=0、importance/category=1/1；Jev benchmark raw/guarded=8/8，三类分别 2/2、2/2、4/4，guard corrected/harmed=0/0。仅 3 次 synthetic live、retry=0，没有代码变更或 tuning，未重跑完整 regression。100% 仅描述当前样本，不能推断总体准确率。已停止，未开始 Phase 4。逐 case、latency/tokens 和结果见 [PHASE_3_5B_R3.md](docs/PHASE_3_5B_R3.md)；历史 contract 适配见 [PHASE_3_5B_R2.md](docs/PHASE_3_5B_R2.md)。
 
 Generation/GLM 负责 Profile facts、normalization、JD requirements 和 matching；Judge/Jev 只负责有限候选上的 scoreability。结果和指标见 [PHASE_3_5B_R.md](docs/PHASE_3_5B_R.md)。原 Jev 开放文本 extraction 的失败探索保留在 [PHASE_3_5B.md](docs/PHASE_3_5B.md)。
 
@@ -159,7 +159,7 @@ uv run python scripts/eval_profile.py --predictions /path/to/predictions.json
 
 10 个 synthetic reviewed cases 覆盖教育、工作、项目、技能、数字、中英混合、缺失信息及模糊表述。默认 replay 对比是回归验证，不代表 live 模型质量。事实完整性仍需用户审阅；数值、source quote 和引用校验不能证明所有语义均有来源。详细规则见 [docs/PHASE_2.md](docs/PHASE_2.md)。
 
-当前使用 Generation `jd-requirements-v2`、Judge `scoreability-v1` 和 Generation `matching-v1`（各 6000 output tokens、temperature=0），均支持独立 offline replay；历史 `jd-extract-v1` 保留原语义。`uv run python scripts/eval_jobs.py` 运行 12 个抽取、8 个 scoreability、5 个 matching reviewed synthetic fixtures；可传 `--predictions`。新增 `--suite scoreability` / `--case` / `--output`；live 需要 `AI_MODE=live` + `--live`，单次尝试，8-case 分类仅一个批量请求。本次在 Profile live Step 1 失败后停止，不自动重跑。规则、Coverage 公式、trace、已知限制见 [docs/PHASE_3.md](docs/PHASE_3.md)。
+当前使用 Generation `jd-requirements-v2`、Judge `scoreability-v1` 和 Generation `matching-v1`（各 6000 output tokens、temperature=0），均支持独立 offline replay；历史 `jd-extract-v1` 保留原语义。`uv run python scripts/eval_jobs.py` 运行 12 个抽取、8 个 scoreability、5 个 matching reviewed synthetic fixtures；可传 `--predictions`。新增 `--suite scoreability` / `--case` / `--output`；live 需要 `AI_MODE=live` + `--live`，单次尝试，8-case 分类仅一个批量请求。R3 已完成 JD 单例及 Jev 单例/8-case 批量 live 验收，共 3 次请求后停止，不自动重跑。规则、Coverage 公式、trace、已知限制见 [docs/PHASE_3.md](docs/PHASE_3.md)。
 
 ## 检查
 
