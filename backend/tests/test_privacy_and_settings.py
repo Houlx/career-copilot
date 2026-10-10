@@ -1,0 +1,97 @@
+import json
+
+import pytest
+from career_copilot.api import create_app
+from career_copilot.config import Settings
+from career_copilot.tracing import redact, state_diff
+from fastapi.testclient import TestClient
+from pydantic import SecretStr, ValidationError
+
+
+def test_default_mode_and_role_fallback():
+    settings = Settings(_env_file=None, model="shared", api_key="shared-key", judge_model="judge")
+    assert settings.ai_mode == "fake"
+    assert not settings.payloads_enabled
+    assert settings.for_role("judge").model == "judge"
+    assert settings.for_role("generation").model == "shared"
+    assert settings.for_role("judge").api_key.get_secret_value() == "shared-key"
+    assert "shared-key" not in repr(settings)
+
+
+def test_live_requires_explicit_credentials():
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, ai_mode="live")
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, ai_mode="unknown")
+
+
+def test_role_overrides():
+    settings = Settings(
+        _env_file=None,
+        model="shared",
+        api_key="shared-key",
+        generation_model="writer",
+        generation_base_url="http://localhost:1234/v1",
+        generation_api_key="writer-key",
+    )
+    cfg = settings.for_role("generation")
+    assert cfg.model == "writer"
+    assert cfg.base_url == "http://localhost:1234/v1"
+    assert cfg.api_key.get_secret_value() == "writer-key"
+
+
+def test_settings_endpoint_never_exposes_credentials(settings):
+    settings.api_key = SecretStr("special-secret")
+    settings.base_url = "https://user:password@example.com/v1?api_key=special-secret"
+    with TestClient(create_app(settings)) as client:
+        response = client.get("/api/settings")
+        assert response.status_code == 200
+        assert "special-secret" not in response.text
+        assert "password" not in response.text
+        assert response.json()["models"][0]["api_key_configured"]
+
+
+def test_debug_payload_opt_in_and_secret_redaction(settings):
+    settings.ai_debug_payloads = True
+    settings.api_key = SecretStr("test-configured-secret")
+    with TestClient(create_app(settings)) as client:
+        run_id = client.post(
+            "/api/workflows/dummy",
+            json={
+                "message": "private career text test-configured-secret sk-other-secret Bearer foo",
+            },
+        ).json()["run_id"]
+        run = client.get(f"/api/debug/runs/{run_id}").json()
+        text = json.dumps(run)
+        assert "private career text" in text
+        assert "test-configured-secret" not in text
+        assert "sk-other-secret" not in text
+        assert "Bearer foo" not in text
+        assert "[REDACTED]" in text
+    # Disabling the flag also prevents reading payloads previously persisted with opt-in.
+    settings.ai_debug_payloads = False
+    with TestClient(create_app(settings)) as client:
+        run = client.get(f"/api/debug/runs/{run_id}").json()
+        assert all("debug_payload" not in n for n in run["nodes"])
+
+
+def test_production_hides_debug_apis_even_with_payload_flag(settings):
+    settings.app_env = "production"
+    settings.ai_debug_payloads = True
+    assert not settings.payloads_enabled
+    with TestClient(create_app(settings)) as client:
+        assert not client.get("/api/settings").json()["debug_enabled"]
+        for path in ("/api/debug/runs", "/api/debug/runs/id"):
+            assert client.get(path).status_code == 404
+        assert client.post("/api/debug/replay", json={}).status_code == 404
+        assert client.post("/api/workflows/dummy", json={}).status_code == 200
+
+
+def test_redaction_and_diff_only_changed_fields():
+    assert redact({"API_KEY": "abc", "nested": {"Authorization": "abc"}}, []) == {
+        "API_KEY": "[REDACTED]",
+        "nested": {"Authorization": "[REDACTED]"},
+    }
+    diff = state_diff({"same": 1, "text": "personal"}, {"same": 1, "text": "changed", "n": 2})
+    assert set(diff) == {"text", "n"}
+    assert "personal" not in json.dumps(diff)

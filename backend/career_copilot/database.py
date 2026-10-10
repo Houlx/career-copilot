@@ -1,0 +1,120 @@
+import json
+import sqlite3
+from contextlib import contextmanager
+from pathlib import Path
+
+from .errors import CopilotError, ErrorCode
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS workflow_runs (
+    run_id TEXT PRIMARY KEY,
+    workflow_name TEXT NOT NULL,
+    workflow_version TEXT NOT NULL,
+    started_at TEXT NOT NULL,
+    completed_at TEXT,
+    duration_ms REAL,
+    status TEXT NOT NULL,
+    error_code TEXT
+);
+CREATE TABLE IF NOT EXISTS node_traces (
+    run_id TEXT NOT NULL REFERENCES workflow_runs(run_id),
+    sequence INTEGER NOT NULL,
+    node_name TEXT NOT NULL,
+    status TEXT NOT NULL,
+    trace_json TEXT NOT NULL,
+    PRIMARY KEY (run_id, sequence)
+);
+CREATE INDEX IF NOT EXISTS runs_started ON workflow_runs(started_at DESC);
+PRAGMA user_version = 1;
+"""
+
+
+class Database:
+    def __init__(self, path: Path):
+        self.path = path
+
+    @contextmanager
+    def connect(self):
+        try:
+            with sqlite3.connect(self.path, timeout=10) as conn:
+                conn.row_factory = sqlite3.Row
+                conn.execute("PRAGMA foreign_keys = ON")
+                yield conn
+        except sqlite3.Error as exc:
+            raise CopilotError(ErrorCode.PERSISTENCE_FAILED) from exc
+
+    def initialize(self):
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        with self.connect() as conn:
+            conn.execute("PRAGMA journal_mode = WAL")
+            conn.executescript(SCHEMA)
+
+    def start_run(self, run: dict):
+        with self.connect() as conn:
+            conn.execute(
+                "INSERT INTO workflow_runs "
+                "(run_id, workflow_name, workflow_version, started_at, status) "
+                "VALUES (:run_id, :workflow_name, :workflow_version, :started_at, :status)",
+                run,
+            )
+
+    def finish_run(
+        self,
+        run_id: str,
+        completed_at: str,
+        duration_ms: float,
+        status: str,
+        error_code: str | None,
+    ):
+        with self.connect() as conn:
+            conn.execute(
+                "UPDATE workflow_runs SET completed_at=?, duration_ms=?, status=?, error_code=? "
+                "WHERE run_id=?",
+                (completed_at, duration_ms, status, error_code, run_id),
+            )
+
+    def add_node(self, trace: dict):
+        with self.connect() as conn:
+            conn.execute(
+                "INSERT INTO node_traces VALUES (?, ?, ?, ?, ?)",
+                (
+                    trace["run_id"],
+                    trace["sequence"],
+                    trace["node_name"],
+                    trace["status"],
+                    json.dumps(trace, ensure_ascii=False),
+                ),
+            )
+
+    def get_run(self, run_id: str) -> dict | None:
+        with self.connect() as conn:
+            row = conn.execute("SELECT * FROM workflow_runs WHERE run_id=?", (run_id,)).fetchone()
+            if row is None:
+                return None
+            nodes = conn.execute(
+                "SELECT trace_json FROM node_traces WHERE run_id=? ORDER BY sequence", (run_id,)
+            ).fetchall()
+        return {**dict(row), "nodes": [json.loads(n["trace_json"]) for n in nodes]}
+
+    def list_runs(self, limit: int = 50, offset: int = 0) -> list[dict]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM workflow_runs ORDER BY started_at DESC LIMIT ? OFFSET ?",
+                (limit, offset),
+            ).fetchall()
+            result = []
+            for row in rows:
+                nodes = conn.execute(
+                    "SELECT trace_json FROM node_traces WHERE run_id=?", (row["run_id"],)
+                ).fetchall()
+                meta = [json.loads(n["trace_json"]).get("ai") for n in nodes]
+                ai = [m for m in meta if m is not None]
+                result.append(
+                    {
+                        **dict(row),
+                        "total_tokens": sum(m["total_tokens"] for m in ai),
+                        "models": sorted({m["model_name"] for m in ai}),
+                        "node_count": len(nodes),
+                    }
+                )
+        return result

@@ -1,0 +1,7 @@
+{
+  "task": "diagnostic",
+  "prompt_version": "diagnostic-v1",
+  "output": {
+    "message": "Provider connection verified"
+  }
+}

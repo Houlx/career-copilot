@@ -1,0 +1,120 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import App from './App';
+
+const settings = {
+  ai_mode: 'fake',
+  app_env: 'development',
+  debug_enabled: true,
+  debug_payloads: false,
+  models: [
+    {
+      role: 'judge',
+      provider: 'openai-compatible',
+      model: 'Not configured',
+      api_key_configured: false,
+    },
+  ],
+  prompts: { diagnostic: 'diagnostic-v1' },
+};
+const detail = {
+  run_id: 'run-1',
+  workflow_name: 'dummy',
+  workflow_version: 'dummy-v1',
+  status: 'completed',
+  duration_ms: 2,
+  nodes: [
+    {
+      node_name: 'mutate_state',
+      sequence: 1,
+      status: 'completed',
+      started_at: '2026-10-10T00:00:00Z',
+      duration_ms: 1,
+      input_summary: {},
+      output_summary: {},
+      state_changes: { counter: { before: 0, after: 1 } },
+      validation_result: { status: 'passed' },
+      ai: null,
+      error_code: null,
+    },
+  ],
+};
+
+beforeEach(() => {
+  window.history.replaceState({}, '', '/');
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => {
+      const value =
+        url === '/api/settings'
+          ? settings
+          : url === '/api/workflows/dummy'
+            ? { run_id: 'run-1', state: { result: 'Ready: Career Copilot', counter: 1 } }
+            : url === '/api/debug/runs/run-1'
+              ? detail
+              : url === '/api/debug/replay'
+                ? { output: { message: 'Provider connection verified' } }
+                : { runs: [] };
+      return { ok: true, json: async () => value };
+    }),
+  );
+});
+
+describe('Phase 1 shell', () => {
+  it('runs a diagnostic explicitly and opens its real node timeline', async () => {
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: '运行诊断 →' }));
+    expect(await screen.findByText('✓ 工作流完成')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '查看节点追踪 →' }));
+    expect(await screen.findByText('Node Timeline')).toBeInTheDocument();
+    expect(screen.getByText('State Diff')).toBeInTheDocument();
+    expect(screen.getByText(/确定性 Python 节点/)).toBeInTheDocument();
+    expect(screen.queryByText('Debug Payload（显式开启）')).not.toBeInTheDocument();
+  });
+
+  it('shows configuration and no secret values', async () => {
+    window.history.replaceState({}, '', '/settings');
+    render(<App />);
+    expect(await screen.findByText('Prompt 版本')).toBeInTheDocument();
+    expect(screen.getByText('未配置')).toBeInTheDocument();
+    expect(screen.getByText('关闭（默认）')).toBeInTheDocument();
+  });
+
+  it('replays independently from debug page', async () => {
+    window.history.replaceState({}, '', '/debug/runs');
+    render(<App />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Replay diagnostic' }));
+    expect(await screen.findByText(/Provider connection verified/)).toBeInTheDocument();
+    expect(screen.getByText(/还没有运行记录/)).toBeInTheDocument();
+  });
+
+  it('hides debug navigation outside development', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => ({ ...settings, debug_enabled: false }) })),
+    );
+    render(<App />);
+    await screen.findByText('让每一步，都有依据。');
+    expect(screen.queryByRole('link', { name: /Debug Runs/ })).not.toBeInTheDocument();
+  });
+
+  it('displays request failures and re-enables diagnostic control', async () => {
+    const fetchMock = vi.mocked(fetch);
+    render(<App />);
+    const button = await screen.findByRole('button', { name: '运行诊断 →' });
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ error_code: 'WORKFLOW_FAILED' }),
+    } as Response);
+    fireEvent.click(button);
+    expect(await screen.findByRole('alert')).toHaveTextContent('WORKFLOW_FAILED');
+    await waitFor(() => expect(button).toBeEnabled());
+  });
+
+  it('does not start a workflow on initial load', async () => {
+    render(<App />);
+    await screen.findByText('让每一步，都有依据。');
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledWith('/api/settings', undefined);
+  });
+});

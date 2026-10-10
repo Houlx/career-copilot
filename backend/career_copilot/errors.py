@@ -1,0 +1,29 @@
+from enum import StrEnum
+
+
+class ErrorCode(StrEnum):
+    MODEL_REQUEST_FAILED = "MODEL_REQUEST_FAILED"
+    MODEL_OUTPUT_INVALID = "MODEL_OUTPUT_INVALID"
+    PROFILE_EXTRACTION_FAILED = "PROFILE_EXTRACTION_FAILED"
+    PROFILE_NORMALIZATION_FAILED = "PROFILE_NORMALIZATION_FAILED"
+    JD_EXTRACTION_FAILED = "JD_EXTRACTION_FAILED"
+    SCOREABILITY_FAILED = "SCOREABILITY_FAILED"
+    MATCHING_FAILED = "MATCHING_FAILED"
+    MATCH_VALIDATION_FAILED = "MATCH_VALIDATION_FAILED"
+    RESUME_GENERATION_FAILED = "RESUME_GENERATION_FAILED"
+    RESUME_GROUNDING_FAILED = "RESUME_GROUNDING_FAILED"
+    PERSISTENCE_FAILED = "PERSISTENCE_FAILED"
+    REPLAY_NOT_FOUND = "REPLAY_NOT_FOUND"
+    WORKFLOW_FAILED = "WORKFLOW_FAILED"
+
+
+class CopilotError(Exception):
+    def __init__(self, code: ErrorCode):
+        self.code = code
+        super().__init__(code.value)
+
+
+class WorkflowError(CopilotError):
+    def __init__(self, code: ErrorCode, run_id: str):
+        self.run_id = run_id
+        super().__init__(code)
