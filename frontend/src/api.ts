@@ -73,7 +73,14 @@ export interface ProfileEntry {
   title: string;
   content: string;
 }
+export interface BasicInfo {
+  name?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  location?: string | null;
+}
 export interface CareerProfile {
+  basic_info?: BasicInfo;
   raw_input: string;
   ai_normalized_profile: { entries: ProfileEntry[] } | null;
   user_edited_profile: { entries: ProfileEntry[] } | null;
@@ -126,9 +133,12 @@ export interface ResumeFact {
 }
 export interface ResumeDraft {
   language: ResumeLanguage;
-  headline: ResumeFact;
   summary: ResumeFact[];
   sections: { kind: string; items: ResumeFact[] }[];
+}
+export interface ResumeDocument extends ResumeDraft {
+  header?: BasicInfo;
+  headline?: ResumeFact; // Historical artifacts only.
 }
 export interface Resume {
   parent_resume_id?: string;
@@ -141,7 +151,9 @@ export interface Resume {
   status: string;
   created_at: string;
   outdated: boolean;
-  structured_resume: ResumeDraft;
+  structured_resume: ResumeDocument;
+  section_labels?: Record<string, string>;
+  section_order?: string[];
   markdown: string;
   evidence: JobEvidence[];
 }

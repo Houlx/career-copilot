@@ -115,7 +115,19 @@ def main():
                     )
                 ]
             }
-            response = frontend.put("/api/profile", json={"expected_version": 2, "profile": edited})
+            response = frontend.put(
+                "/api/profile",
+                json={
+                    "expected_version": 2,
+                    "profile": edited,
+                    "basic_info": {
+                        "name": "张三",
+                        "phone": "123",
+                        "email": "a@example.test",
+                        "location": "上海",
+                    },
+                },
+            )
             response.raise_for_status()
             assert response.json()["profile"]["raw_input"] == raw
             confirmed = post("/api/profile/confirm", {"expected_version": 3})["profile"]
@@ -212,6 +224,10 @@ def main():
                 revised = post(
                     f"/api/revision-proposals/{proposal['proposal_id']}/accept", expected
                 )["resume"]
+                assert resume["markdown"].startswith("# 张三\n\n123 | a@example\\.test | 上海")
+                assert (
+                    revised["structured_resume"]["header"] == resume["structured_resume"]["header"]
+                )
                 assert revised["parent_resume_id"] == resume["id"]
                 assert revised["id"] != resume["id"] and revised["revision_number"] == 1
                 assert backend.get(f"/api/resumes/{resume['id']}").json()["resume"] == resume

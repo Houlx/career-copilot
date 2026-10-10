@@ -5,28 +5,28 @@ import { api, type Job, type Resume, type ResumeLanguage } from './api';
 const languages = { zh: '中文', en: 'English', ja: '日本語' };
 const labels: Record<ResumeLanguage, Record<string, string>> = {
   zh: {
-    summary: '个人简介',
-    skills: '技能',
+    summary: '个人概述',
+    skills: '专业技能',
     experience: '工作经历',
     projects: '项目经历',
     education: '教育经历',
-    additional: '其他',
+    additional: '其他资质',
   },
   en: {
-    summary: 'Summary',
+    summary: 'Professional Summary',
     skills: 'Skills',
-    experience: 'Experience',
+    experience: 'Work Experience',
     projects: 'Projects',
     education: 'Education',
-    additional: 'Additional',
+    additional: 'Additional Qualifications',
   },
   ja: {
-    summary: '概要',
+    summary: '職務要約',
     skills: 'スキル',
     experience: '職務経歴',
     projects: 'プロジェクト',
     education: '学歴',
-    additional: 'その他',
+    additional: '資格・その他',
   },
 };
 
@@ -152,8 +152,25 @@ export function ResumeDetail({ id, go }: { id: string; go: (path: string) => voi
   }, [id]);
   if (!resume) return <p role={error ? 'alert' : 'status'}>{error || '加载简历…'}</p>;
   const draft = resume.structured_resume;
-  const names = labels[resume.language];
-  const facts = [draft.headline, ...draft.summary, ...draft.sections.flatMap((s) => s.items)];
+  const names = resume.section_labels ?? labels[resume.language];
+  const order = resume.section_order ?? [
+    'skills',
+    'experience',
+    'projects',
+    'education',
+    'additional',
+  ];
+  const sections = order.flatMap((kind) =>
+    draft.sections.filter((s) => s.kind === kind && s.items.length),
+  );
+  const contacts = [draft.header?.phone, draft.header?.email, draft.header?.location].filter(
+    Boolean,
+  );
+  const facts = [
+    ...(draft.headline ? [draft.headline] : []),
+    ...draft.summary,
+    ...draft.sections.flatMap((s) => s.items),
+  ];
   return (
     <div className="resume-detail-layout">
       <div className="resume-main">
@@ -173,14 +190,17 @@ export function ResumeDetail({ id, go }: { id: string; go: (path: string) => voi
         </div>
         {markdown && <pre className="resume-controls">{resume.markdown}</pre>}
         <article className="resume-document" lang={resume.language}>
-          <h1>{draft.headline.text}</h1>
-          <section>
-            <h2>{names.summary}</h2>
-            {draft.summary.map((i, n) => (
-              <p key={n}>{i.text}</p>
-            ))}
-          </section>
-          {draft.sections.map((s) => (
+          <h1>{draft.header?.name ?? 'Resume'}</h1>
+          {contacts.length > 0 && <p>{contacts.join(' | ')}</p>}
+          {draft.summary.length > 0 && (
+            <section>
+              <h2>{names.summary}</h2>
+              {draft.summary.map((i, n) => (
+                <p key={n}>{i.text}</p>
+              ))}
+            </section>
+          )}
+          {sections.map((s) => (
             <section key={s.kind}>
               <h2>{names[s.kind]}</h2>
               <ul>

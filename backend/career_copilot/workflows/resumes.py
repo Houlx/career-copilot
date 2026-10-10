@@ -2,14 +2,21 @@ from typing import TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
-from ..errors import ErrorCode
-from ..models.resumes import ResumeDraft, render_markdown, validate_grounding, validate_language
+from ..errors import CopilotError, ErrorCode
+from ..models.resumes import (
+    ResumeDraft,
+    build_document,
+    render_markdown,
+    validate_grounding,
+    validate_language,
+)
 
 
 class ResumeState(TypedDict, total=False):
     job_id: str
     language: str
     profile_version: int
+    header: dict
     context: dict
     evidence: list[dict]
     draft: dict
@@ -21,7 +28,13 @@ class ResumeState(TypedDict, total=False):
 
 def build_resume_graph(trace, resumes, models):
     def load(s):
-        return resumes.context(s["job_id"], s["language"])
+        context = resumes.context(s["job_id"], s["language"])
+        if not context["header"].get("name"):
+            raise CopilotError(
+                ErrorCode.PROFILE_VALIDATION_FAILED,
+                diagnostics={"rule": "confirmed_profile_name_required"},
+            )
+        return context
 
     def generate(s):
         result = models.generation_model.invoke("resume-generation-v2", s["context"], ResumeDraft)
@@ -45,7 +58,11 @@ def build_resume_graph(trace, resumes, models):
         }
 
     def render(s):
-        return {"markdown": render_markdown(ResumeDraft.model_validate(s["draft"]))}
+        return {
+            "markdown": render_markdown(
+                build_document(ResumeDraft.model_validate(s["draft"]), s["header"])
+            )
+        }
 
     def persist(s):
         return {"resume_id": resumes.persist(s)}

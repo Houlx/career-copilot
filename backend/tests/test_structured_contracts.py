@@ -87,7 +87,7 @@ def test_resume_nested_constraints():
         "additional",
     ]
     item = section["properties"]["items"]["items"]
-    assert item == contract["properties"]["headline"]
+    assert item == contract["properties"]["summary"]["items"]
     assert item["additionalProperties"] is False
     assert item["properties"]["text"]["pattern"] == r"\S"
     assert item["properties"]["evidence_ids"]["minItems"] == 1
@@ -178,6 +178,8 @@ def test_revision_nullable_contract_retains_nested_constraints():
     branches = contract["properties"]["updated_resume"]["anyOf"]
     assert branches[1] == {"type": "null"}
     assert branches[0]["additionalProperties"] is False
-    assert branches[0]["properties"]["headline"]["properties"]["evidence_ids"]["minItems"] == 1
+    assert (
+        branches[0]["properties"]["summary"]["items"]["properties"]["evidence_ids"]["minItems"] == 1
+    )
     assert contract["properties"]["action"]["enum"] == ["REVISE", "ASK_USER", "NO_CHANGE"]
     assert "$ref" not in serialize_contract(contract)

@@ -99,9 +99,9 @@ def test_validation_rejects_no_pending(client, monkeypatch, mutation):
         result = original(*args, **kwargs)
         value = result.output.model_dump()
         if mutation == "invalid_ref":
-            value["updated_resume"]["headline"]["evidence_ids"] = ["career-work-" + "f" * 64]
+            value["updated_resume"]["summary"][0]["evidence_ids"] = ["career-work-" + "f" * 64]
         elif mutation == "numeric":
-            value["updated_resume"]["headline"]["text"] = "Improved 987%"
+            value["updated_resume"]["summary"][0]["text"] = "Improved 987%"
         else:
             value["updated_resume"]["language"] = "ja"
         return ModelResult(
@@ -140,7 +140,7 @@ def test_accept_rechecks_transaction(client, mutation):
                 "SELECT proposal_json FROM resume_revision_proposals WHERE id=?", (proposal_id,)
             ).fetchone()
             value = json.loads(row[0])
-            value["updated_resume"]["headline"]["text"] = "987%"
+            value["updated_resume"]["summary"][0]["text"] = "987%"
             conn.execute(
                 "UPDATE resume_revision_proposals SET proposal_json=? WHERE id=?",
                 (json.dumps(value), proposal_id),
@@ -239,11 +239,11 @@ def test_v4_migration_and_future_version(tmp_path):
     db.initialize()
     db.initialize()
     with db.connect() as conn:
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 5
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 6
         assert conn.execute("SELECT markdown FROM resumes").fetchone()[0] == "saved"
         assert conn.execute("SELECT run_id FROM workflow_runs").fetchone()[0] == "old-run"
         assert not conn.execute("PRAGMA foreign_key_check").fetchall()
-        conn.execute("PRAGMA user_version=6")
+        conn.execute("PRAGMA user_version=7")
     with pytest.raises(CopilotError):
         db.initialize()
 
@@ -267,7 +267,7 @@ def test_revision_replay_isolated_and_metrics_perturbation(client):
     assert client.get("/api/profile").json() == {"profile": None}
     value = cases[0]["payload"]["current_resume"]
     parsed = ResumeDraft.model_validate(value)
-    parsed.headline.evidence_ids = ["career-work-" + "f" * 64]
+    parsed.summary[0].evidence_ids = ["career-work-" + "f" * 64]
     evidence = [{**e, "active": 1, "profile_version": 3} for e in cases[0]["payload"]["evidence"]]
     metrics = grounding_metrics(parsed, evidence, 3)
     assert metrics["invalid_evidence_reference_count"] == 1

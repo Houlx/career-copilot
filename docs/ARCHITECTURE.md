@@ -171,7 +171,24 @@ flowchart TD
 
 固定图，不增加 Agent loop。只读取现有 Job requirements/matches/Coverage 和当前版本 active Evidence。模型按岗位优先级安排真实事实，不把 JD/GAP 或 match explanation 当成候选人事实。Python 检查结构、引用和数字，不声称证明自然语言语义。
 
-ResumeDraft = language + cited headline + cited summary claims + ordered sections(kind/items)。所有文本字段均引用至少一个 canonical Career Evidence ID，禁止重复 refs/sections、空事实、额外字段。工作职位、公司、日期如使用，包含在带引用的完整 item 内。数字复用 Profile helper，仅对该项引用 normalized_content 检查。
+ResumeDraft = language + cited summary claims + semantic sections(kind/items)，没有生成式 headline/Header/section labels。复用 kinds skills/experience/projects/education/additional，additional 表示 qualifications。每个语义事实引用 canonical Career Evidence ID（含 education/qualifications），禁止重复 refs/sections、空事实、额外字段；整体空内容拒绝。可选空 section/summary 由 renderer 省略。数字复用 Profile helper，仅对该项引用 normalized_content 检查。
+
+```text
+Profile identity/contact → confirmed snapshot → ResumeHeader snapshot
+Career Evidence + Job + matches/coverage + requested language → LLM ResumeDraft
+ResumeHeader + validated ResumeDraft → ResumeDocument → deterministic Markdown renderer
+```
+
+旧 Profile 仅含职业 entries，因此新增用户编辑 basic_info（name/phone/email/location），独立于提取/归一化 contract 与 Career Evidence。它通过现有 Profile 编辑事务保存到 v6 profile_basic_info 表，递增 Profile version、取消确认；confirm 将 basic_info 冻结于 last_confirmed_profile。新生成前必须有已确认姓名，不从 raw/Evidence 推断。Header 是 document metadata，不需要 Evidence citation，也不加入 LLM payload。
+
+ResumeDocument 直接复用语义字段，附加 Python 构造的 ResumeHeader；provider contract 不含 Header。resumes 表保持不变，structured_resume_json 保存 Header snapshot。生成最后的事务重新检查 Profile version 与确认状态，使用该版本的 confirmed Header，之后读旧简历只读 artifact。修改 Profile 不改变旧 Header/Markdown；重新确认并分析岗位后新简历使用新 Header。
+
+Python renderer 固定 Header → Summary → Skills → Experience → Projects → Education → Additional，zh/en/ja labels 使用 LABELS mapping。主标题只有 name，phone/email/location 仅按存在值连接，没有空占位。模型仅控制章节内部内容重点/措辞/优先级。API 提供同一 labels/order 给正文 UI，未来 PDFRenderer 可消费同一 ResumeDocument；当前不实现 PDF。
+
+LLM decides what to say. Renderer decides how the resume is organized and displayed.
+Header is deterministic. Global section order is deterministic. Visual layout is deterministic.
+
+历史 structured JSON/headline 与已存 Markdown 原样读取，不迁移或套用最新联系方式。历史正文 UI 无 Header 时显示中性 Resume 标题，旧 headline 仍可读但不再充当正文主标题。既有 Revision 仅接收 semantic content，不能输出 Header，accept 时继承父 artifact Header；历史无 Header 则保持缺失，不使用最新 Profile 补写。联系方式修改请求提示先更新 Profile。默认 shape-only trace 不记录原值，development opt-in payload 也省略 Header/basic_info 和渲染 Markdown。
 
 v4 resumes 存 job_id/profile_version/language/status/structured_resume_json/markdown/evidence_json/created_at。最终事务内复查确认、版本、Job 状态和 Evidence，任何失败无半完成 artifact。Evidence 使用引用内容快照；没有 Job 删除级联，linked Job 缺失时历史 Resume 仍展示且 outdated。读取动态计算版本/确认/Job outdated，不自动重生成。
 

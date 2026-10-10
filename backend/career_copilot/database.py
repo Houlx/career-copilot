@@ -103,7 +103,10 @@ CREATE TABLE IF NOT EXISTS resume_revision_lineage (
  revision_thread_id TEXT NOT NULL REFERENCES resume_revision_threads(id),
  revision_number INTEGER NOT NULL, UNIQUE(revision_thread_id,revision_number)
 );
-PRAGMA user_version = 5;
+CREATE TABLE IF NOT EXISTS profile_basic_info (
+ id INTEGER PRIMARY KEY CHECK(id=1), metadata_json TEXT NOT NULL
+);
+PRAGMA user_version = 6;
 """
 
 
@@ -125,7 +128,7 @@ class Database:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as conn:
             conn.execute("PRAGMA journal_mode = WAL")
-            if conn.execute("PRAGMA user_version").fetchone()[0] > 5:
+            if conn.execute("PRAGMA user_version").fetchone()[0] > 6:
                 raise CopilotError(ErrorCode.PERSISTENCE_FAILED)
             conn.executescript(SCHEMA)
 

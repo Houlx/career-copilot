@@ -6,8 +6,10 @@ from uuid import uuid4
 from .errors import CopilotError, ErrorCode
 from .models.resumes import (
     ResumeDraft,
+    build_document,
     fact_items,
     render_markdown,
+    semantic_content,
     validate_grounding,
     validate_language,
 )
@@ -180,11 +182,12 @@ class RevisionStore:
             )
             payload = {
                 **context["context"],
-                "current_resume": json.loads(row["structured_resume_json"]),
+                "current_resume": semantic_content(json.loads(row["structured_resume_json"])),
                 "conversation_messages": [dict(r) for r in reversed(recent)],
                 "user_instruction": instruction["content"],
             }
             return {
+                "header": json.loads(row["structured_resume_json"]).get("header", {}),
                 "thread_id": thread_id,
                 "base_resume_id": row["id"],
                 "profile_version": thread["profile_version"],
@@ -213,7 +216,8 @@ class RevisionStore:
             if proposal.updated_resume:
                 self._validate(proposal.updated_resume, row, context)
                 diff = revision_diff(
-                    json.loads(row["structured_resume_json"]), proposal.updated_resume.model_dump()
+                    semantic_content(json.loads(row["structured_resume_json"])),
+                    proposal.updated_resume.model_dump(),
                 )
                 if not diff:
                     raise CopilotError(ErrorCode.REVISION_VALIDATION_FAILED)
@@ -273,6 +277,9 @@ class RevisionStore:
                     for e in context["evidence"]
                     if e["id"] in refs
                 ]
+                document = build_document(
+                    draft, json.loads(row["structured_resume_json"]).get("header", {})
+                )
                 new_id = str(uuid4())
                 conn.execute(
                     "INSERT INTO resumes VALUES (?,?,?,?,'completed',?,?,?,?)",
@@ -281,8 +288,8 @@ class RevisionStore:
                         row["job_id"],
                         row["profile_version"],
                         row["language"],
-                        encode(draft.model_dump()),
-                        render_markdown(draft),
+                        encode(document.model_dump()),
+                        render_markdown(document),
                         encode(snapshot),
                         now(),
                     ),

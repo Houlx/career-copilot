@@ -28,6 +28,20 @@ def summary(value):
     return {"type": type(value).__name__}
 
 
+def resume_debug_payload(value):
+    """Resume metadata stays out of traces even when semantic debugging is enabled."""
+    if isinstance(value, dict):
+        return {
+            key: "[document metadata omitted]"
+            if key in {"header", "basic_info", "markdown"}
+            else resume_debug_payload(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [resume_debug_payload(item) for item in value]
+    return value
+
+
 def state_diff(before: dict, updates: dict) -> dict:
     return {
         key: {"before": summary(before.get(key)), "after": summary(value)}
@@ -134,6 +148,11 @@ class RunTrace:
                 AI_OBSERVER.reset(token)
                 AI_PAYLOAD_OBSERVER.reset(payload_token)
                 trace["duration_ms"] = round((perf_counter() - started) * 1000, 3)
+                if (
+                    self.workflow_name in {"resume_generation_workflow", "resume_revision_agent"}
+                    and "debug_payload" in trace
+                ):
+                    trace["debug_payload"] = resume_debug_payload(trace["debug_payload"])
                 self.db.add_node(redact(trace, self.settings.secrets()))
 
         return wrapped

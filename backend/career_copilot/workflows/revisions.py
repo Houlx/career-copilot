@@ -1,11 +1,18 @@
 """One bounded decision; no autonomous tools, repair loop or final resume writes."""
 
+import re
 from typing import TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
 from ..errors import CopilotError, ErrorCode
-from ..models.resumes import ResumeDraft, render_markdown, validate_grounding, validate_language
+from ..models.resumes import (
+    ResumeDraft,
+    build_document,
+    render_markdown,
+    validate_grounding,
+    validate_language,
+)
 from ..models.revisions import ResumeRevisionProposal, revision_diff
 
 MAX_AGENT_STEPS = 4
@@ -17,6 +24,7 @@ class ResumeRevisionState(TypedDict, total=False):
     base_resume_id: str
     profile_version: int
     generation: int
+    header: dict
     context: dict
     evidence: list[dict]
     agent_step_count: int
@@ -33,6 +41,21 @@ def agent_decide(state, models):
     step = state.get("agent_step_count", 0) + 1
     if step > MAX_AGENT_STEPS:
         raise CopilotError(ErrorCode.REVISION_STEP_LIMIT_EXCEEDED)
+    if re.search(
+        r"电话|邮箱|所在地|姓名|联系方式|電話|氏名|メール|住所|連絡先|\b(phone|email|location|contact|name)\b",
+        state["context"]["user_instruction"],
+        re.I,
+    ):
+        return {
+            "proposal": {
+                "action": "NO_CHANGE",
+                "assistant_message": "请先更新 Profile 基本信息并确认，然后重新生成简历。",
+                "updated_resume": None,
+                "change_summary": [],
+            },
+            "agent_step_count": step,
+            "agent_action": "NO_CHANGE",
+        }
     result = models.generation_model.invoke(
         "resume-revision-agent-v1", state["context"], ResumeRevisionProposal
     )
@@ -58,7 +81,7 @@ def build_revision_graph(trace, revisions, models):
         return {
             "validation_metrics": metrics,
             "language_validation": language,
-            "markdown": render_markdown(draft),
+            "markdown": render_markdown(build_document(draft, s["header"])),
             "diff": revision_diff(s["context"]["current_resume"], draft.model_dump()),
         }
 

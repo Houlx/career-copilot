@@ -27,25 +27,44 @@ class FactItem(StrictModel):
 
 class ResumeSection(StrictModel):
     kind: Literal["skills", "experience", "projects", "education", "additional"]
-    items: list[FactItem] = Field(min_length=1, max_length=200)
+    items: list[FactItem] = Field(max_length=200)
 
 
 class ResumeDraft(StrictModel):
     language: Language
-    headline: FactItem
-    summary: list[FactItem] = Field(min_length=1, max_length=20)
-    sections: list[ResumeSection] = Field(min_length=1, max_length=5)
+    summary: list[FactItem] = Field(max_length=20)
+    sections: list[ResumeSection] = Field(max_length=5)
 
     @model_validator(mode="after")
     def unique_sections(self):
         kinds = [s.kind for s in self.sections]
         if len(kinds) != len(set(kinds)):
             raise ValueError("Duplicate sections")
+        if not self.summary and not any(s.items for s in self.sections):
+            raise ValueError("Resume must contain semantic content")
         return self
 
 
+class ResumeHeader(StrictModel):
+    """User-confirmed metadata; never a generation provider output."""
+
+    name: str | None = Field(default=None, min_length=1, max_length=300, pattern=r"\S")
+    phone: str | None = Field(default=None, min_length=1, max_length=300, pattern=r"\S")
+    email: str | None = Field(default=None, min_length=1, max_length=300, pattern=r"\S")
+    location: str | None = Field(default=None, min_length=1, max_length=300, pattern=r"\S")
+
+
+SECTION_ORDER = ("skills", "experience", "projects", "education", "additional")
+
+
+class ResumeDocument(ResumeDraft):
+    """Renderer-facing immutable artifact snapshot; excluded from provider contracts."""
+
+    header: ResumeHeader
+
+
 def fact_items(draft):
-    return [draft.headline, *draft.summary, *(i for s in draft.sections for i in s.items)]
+    return [*draft.summary, *(i for s in draft.sections for i in s.items)]
 
 
 def grounding_metrics(draft, evidence, version):
@@ -95,28 +114,28 @@ def validate_language(draft, language):
 
 LABELS = {
     "en": {
-        "summary": "Summary",
+        "summary": "Professional Summary",
         "skills": "Skills",
-        "experience": "Experience",
+        "experience": "Work Experience",
         "projects": "Projects",
         "education": "Education",
-        "additional": "Additional",
+        "additional": "Additional Qualifications",
     },
     "zh": {
-        "summary": "个人简介",
-        "skills": "技能",
+        "summary": "个人概述",
+        "skills": "专业技能",
         "experience": "工作经历",
         "projects": "项目经历",
         "education": "教育经历",
-        "additional": "其他",
+        "additional": "其他资质",
     },
     "ja": {
-        "summary": "概要",
+        "summary": "職務要約",
         "skills": "スキル",
         "experience": "職務経歴",
         "projects": "プロジェクト",
         "education": "学歴",
-        "additional": "その他",
+        "additional": "資格・その他",
     },
 }
 
@@ -127,15 +146,35 @@ def plain(text):
     return re.sub(r"([\\`*_{}\[\]()#+.!<>|~-])", r"\\\1", text)
 
 
-def render_markdown(draft):
-    labels = LABELS[draft.language]
-    lines = ["# " + plain(draft.headline.text), "", "## " + labels["summary"], ""]
-    lines.extend(plain(i.text) + "\n" for i in draft.summary)
-    for section in draft.sections:
-        lines.extend(["## " + labels[section.kind], ""])
+def render_markdown(document: ResumeDocument):
+    labels = LABELS[document.language]
+    lines = []
+    if document.header.name:
+        lines.extend(["# " + plain(document.header.name), ""])
+    contacts = [document.header.phone, document.header.email, document.header.location]
+    if any(contacts):
+        lines.extend([" | ".join(plain(v) for v in contacts if v), ""])
+    if document.summary:
+        lines.extend(["## " + labels["summary"], ""])
+        lines.extend(plain(i.text) + "\n" for i in document.summary)
+    sections = {s.kind: s for s in document.sections}
+    for kind in SECTION_ORDER:
+        section = sections.get(kind)
+        if not section or not section.items:
+            continue
+        lines.extend(["## " + labels[kind], ""])
         lines.extend("- " + plain(i.text) for i in section.items)
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
+
+
+def build_document(draft, header):
+    return ResumeDocument(**draft.model_dump(), header=ResumeHeader.model_validate(header))
+
+
+def semantic_content(artifact):
+    """Historical JSON remains readable; legacy headline is never regenerated."""
+    return {k: artifact[k] for k in ("language", "summary", "sections")}
 
 
 def fake_resume(payload):
@@ -144,7 +183,6 @@ def fake_resume(payload):
     item = {"text": e["normalized_content"], "evidence_ids": [e["id"]]}
     return {
         "language": payload["requested_language"],
-        "headline": item,
         "summary": [item],
         "sections": [{"kind": "skills", "items": [item]}, {"kind": "experience", "items": [item]}],
     }

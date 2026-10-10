@@ -7,6 +7,7 @@ from career_copilot.api import create_app
 from career_copilot.errors import CopilotError
 from career_copilot.models.resumes import (
     ResumeDraft,
+    build_document,
     fake_resume,
     grounding_metrics,
     render_markdown,
@@ -37,7 +38,21 @@ def setup_job(client):
         "/api/profile/raw", json={"raw_input": "Built Python tools in 2024.", "expected_version": 0}
     ).raise_for_status()
     client.post("/api/profile/normalize", json={"expected_version": 1}).raise_for_status()
-    client.post("/api/profile/confirm", json={"expected_version": 2}).raise_for_status()
+    profile = client.get("/api/profile").json()["profile"]
+    client.put(
+        "/api/profile",
+        json={
+            "expected_version": 2,
+            "profile": profile["effective_profile"],
+            "basic_info": {
+                "name": "张三",
+                "phone": "123",
+                "email": "a@example.test",
+                "location": "上海",
+            },
+        },
+    ).raise_for_status()
+    client.post("/api/profile/confirm", json={"expected_version": 3}).raise_for_status()
     return client.post("/api/jobs/analyze", json={"raw_jd": "Synthetic JD"}).json()["job"]["id"]
 
 
@@ -70,7 +85,7 @@ def test_resume_flow_restart_history_delete_trace(client, settings):
     assert len(client.get(f"/api/jobs/{job}/resumes").json()["resumes"]) == 3
     with TestClient(create_app(settings)) as restarted:
         assert restarted.get("/api/resumes/" + results[0]["id"]).json()["resume"] == results[0]
-    client.post("/api/profile/raw", json={"raw_input": "New synthetic data", "expected_version": 3})
+    client.post("/api/profile/raw", json={"raw_input": "New synthetic data", "expected_version": 4})
     old = client.get("/api/resumes/" + results[0]["id"]).json()["resume"]
     assert old["outdated"] and old["evidence"] == results[0]["evidence"]
     client.delete("/api/jobs/" + job).raise_for_status()
@@ -119,7 +134,6 @@ def test_gates_no_model(client, monkeypatch, change, code):
         "zero_refs",
         "duplicate_refs",
         "language",
-        "empty_section",
         "duplicate_section",
         "empty_text",
     ],
@@ -131,11 +145,11 @@ def test_strict_schema(mutation):
     elif mutation == "extra":
         value["unexpected"] = True
     elif mutation == "invalid_id":
-        value["headline"]["evidence_ids"] = ["req-001"]
+        value["summary"][0]["evidence_ids"] = ["req-001"]
     elif mutation == "zero_refs":
-        value["headline"]["evidence_ids"] = []
+        value["summary"][0]["evidence_ids"] = []
     elif mutation == "duplicate_refs":
-        value["headline"]["evidence_ids"] = [EID, EID]
+        value["summary"][0]["evidence_ids"] = [EID, EID]
     elif mutation == "language":
         value["language"] = "de"
     elif mutation == "empty_section":
@@ -143,7 +157,7 @@ def test_strict_schema(mutation):
     elif mutation == "duplicate_section":
         value["sections"].append(value["sections"][0])
     elif mutation == "empty_text":
-        value["headline"]["text"] = "   "
+        value["summary"][0]["text"] = "   "
     with pytest.raises(ValidationError):
         ResumeDraft.model_validate(value)
 
@@ -164,7 +178,7 @@ def test_grounding_rejects(mutation):
     elif mutation == "numeric":
         value["sections"][0]["items"][0]["text"] = "Improved 99%"
     elif mutation == "headline_numeric":
-        value["headline"]["text"] = "10 years experience"
+        value["summary"][0]["text"] = "10 years experience"
     else:
         value["summary"][0]["text"] = "Managed 50 people"
     with pytest.raises(CopilotError):
@@ -178,20 +192,18 @@ def test_multiple_refs_numeric_and_language_renderer():
         "id": "career-skill-" + "b" * 64,
         "normalized_content": "Managed 4 applications",
     }
-    value["headline"] = {"text": "Python 3.12; 4 applications", "evidence_ids": [EID, second["id"]]}
+    value["summary"][0] = {
+        "text": "Python 3.12; 4 applications",
+        "evidence_ids": [EID, second["id"]],
+    }
     parsed = ResumeDraft.model_validate(value)
     metrics = validate_grounding(parsed, [*EVIDENCE, second], 3)
     assert metrics["evidence_backed_item_rate"] == 1
     with pytest.raises(CopilotError):
         validate_language(parsed, "ja")
-    expected = (
-        "# Python 3\\.12; 4 applications\n\n## Summary\n\n"
-        "Built Python 3\\.12 tools in 2024; improved latency 20%\\.\n\n"
-        "## Skills\n\n- Built Python 3\\.12 tools in 2024; improved latency 20%\\.\n\n"
-        "## Experience\n\n- Built Python 3\\.12 tools in 2024; improved latency 20%\\.\n"
-    )
-    assert render_markdown(parsed) == expected
-    assert render_markdown(parsed) == render_markdown(parsed)
+    document = build_document(parsed, {"name": "张三"})
+    assert render_markdown(document).startswith("# 张三\n\n## Professional Summary")
+    assert render_markdown(document) == render_markdown(document)
 
 
 @pytest.mark.parametrize(
@@ -232,7 +244,7 @@ def test_bad_model_grounding_atomic(client, monkeypatch):
     def invoke(*args, **kwargs):
         result = original(*args, **kwargs)
         value = result.output.model_dump()
-        value["headline"]["text"] = "Managed 987 people"
+        value["summary"][0]["text"] = "Managed 987 people"
         return ModelResult(output=ResumeDraft.model_validate(value), metadata=result.metadata)
 
     monkeypatch.setattr(client.app.state.models.generation_model, "invoke", invoke)
@@ -301,12 +313,12 @@ def test_schema_v3_migration_preserves_artifacts(tmp_path):
     db.initialize()
     db.initialize()
     with db.connect() as conn:
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 5
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 6
         assert conn.execute("SELECT id FROM jobs").fetchone()[0] == "old"
         assert conn.execute("SELECT count(*) FROM resumes").fetchone()[0] == 0
 
 
 def test_metrics_detect_unsupported_constructed_item():
     parsed = ResumeDraft.model_validate(draft())
-    parsed.headline.evidence_ids = []
+    parsed.summary[0].evidence_ids = []
     assert grounding_metrics(parsed, EVIDENCE, 3)["unsupported_fact_item_count"] == 1

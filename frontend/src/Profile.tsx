@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import { api, type CareerProfile, type ProfileEntry, type ProfileResponse } from './api';
+import {
+  api,
+  type BasicInfo,
+  type CareerProfile,
+  type ProfileEntry,
+  type ProfileResponse,
+} from './api';
 
 type PageState = 'empty' | CareerProfile['state'] | 'normalizing' | 'failed';
 const typeNames = {
@@ -54,6 +60,7 @@ export function ProfilePage({
   debugEnabled: boolean;
 }) {
   const [profile, setProfile] = useState<CareerProfile | null>(null);
+  const [basicInfo, setBasicInfo] = useState<BasicInfo>({});
   const [raw, setRaw] = useState('');
   const [entries, setEntries] = useState<ProfileEntry[]>([]);
   const [state, setState] = useState<PageState>('empty');
@@ -63,6 +70,7 @@ export function ProfilePage({
   const [runId, setRunId] = useState('');
   function apply(next: CareerProfile | null) {
     setProfile(next);
+    setBasicInfo(next?.basic_info ?? {});
     setRaw(next?.raw_input ?? '');
     setEntries(next?.effective_profile?.entries ?? []);
     setState(next?.state ?? 'empty');
@@ -88,7 +96,8 @@ export function ProfilePage({
   }, []);
   const rawDirty = raw !== (profile?.raw_input ?? '');
   const edited =
-    JSON.stringify(entries) !== JSON.stringify(profile?.effective_profile?.entries ?? []);
+    JSON.stringify(entries) !== JSON.stringify(profile?.effective_profile?.entries ?? []) ||
+    JSON.stringify(basicInfo) !== JSON.stringify(profile?.basic_info ?? {});
   const busy = saving || state === 'normalizing' || loading;
   async function act(action: 'raw' | 'normalize' | 'edit' | 'confirm') {
     setError('');
@@ -103,7 +112,7 @@ export function ProfilePage({
         action === 'raw'
           ? { expected_version, raw_input: raw }
           : action === 'edit'
-            ? { expected_version, profile: { entries } }
+            ? { expected_version, profile: { entries }, basic_info: basicInfo }
             : { expected_version };
       const response = await api<ProfileResponse>(
         action === 'edit' ? '/profile' : `/profile/${action}`,
@@ -166,6 +175,22 @@ export function ProfilePage({
           <h2>整理后的职业资料</h2>
           {profile.state === 'raw_saved' && <p>以下为上次整理结果；新原始资料需要重新 AI 整理。</p>}
           <fieldset disabled={busy || rawDirty || profile.state === 'raw_saved'}>
+            <h3>基本信息</h3>
+            {(['name', 'phone', 'email', 'location'] as const).map((field) => (
+              <label key={field}>
+                {{ name: '姓名', phone: '电话', email: '邮箱', location: '所在地' }[field]}
+                <input
+                  value={basicInfo[field] ?? ''}
+                  maxLength={300}
+                  onChange={(e) =>
+                    setBasicInfo((old) => ({
+                      ...old,
+                      [field]: e.target.value.trim() ? e.target.value : null,
+                    }))
+                  }
+                />
+              </label>
+            ))}
             {entries.map((entry, index) => (
               <div className="profile-entry" key={entry.source_index}>
                 <label>

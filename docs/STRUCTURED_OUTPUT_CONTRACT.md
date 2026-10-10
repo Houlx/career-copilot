@@ -70,6 +70,17 @@ Phase 5：nullable `ResumeRevisionProposal.updated_resume` 通过递归 anyOf co
 
 ## Resume generation v2 update
 
-The active task is now resume-generation-v2; ResumeDraft and its contract hash are unchanged. The business prompt is the supplied semantic-content prompt plus application mapping for mandatory headline/summary/sections and existing section kinds. No identity/contact fields or PDF renderer were added. The size table above records the historical v1 observation.
+The active task remains resume-generation-v2. The document refactor removes headline from
+ResumeDraft; the derived contract hash changes. ResumeDraft contains semantic language/summary/
+sections only. Summary and sections may be empty individually; the full content must not be empty.
+Stable section kinds remain skills/experience/projects/education/additional. No identity/contact
+fields enter provider contracts. Python combines the validated content with a confirmed Profile
+ResumeHeader snapshot into ResumeDocument. The same semantic contract is reused by the existing
+revision flow; Header cannot be revised. No structured-output architecture or task policy changed.
+The size table above records the historical v1 observation.
+
+LLM decides what to say. Renderer decides how the resume is organized and displayed.
+Header is deterministic. Global section order is deterministic. Visual layout is deterministic.
+Python supplies localized labels and omits empty sections. No PDF renderer was implemented.
 
 Workflow, trace, fake mode, debug replay API/UI, reasoning tests and eval runner use v2. New v2 replay files reuse synthetic v1 outputs for contract and grounding regression only; they are not live captures. Historical v1 files/results remain unchanged. Exact task/version lookup has no cross-version fallback. Offline replay does not evaluate compliance with the new prose instructions.

@@ -6,18 +6,11 @@
     "assistant_message": "Reviewed synthetic response.",
     "updated_resume": {
       "language": "en",
-      "headline": {
-        "text": "Reduced latency by 99%.",
-        "evidence_ids": [
-          "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-        ]
-      },
       "summary": [
         {
-          "text": "Built Python 3.12 services and a React prototype.",
+          "text": "Reduced latency by 99%.",
           "evidence_ids": [
-            "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-            "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
           ]
         }
       ],

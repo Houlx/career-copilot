@@ -4,7 +4,10 @@ from uuid import uuid4
 from .errors import CopilotError, ErrorCode
 from .job_store import JobStore
 from .models.resumes import (
+    LABELS,
+    SECTION_ORDER,
     ResumeDraft,
+    build_document,
     fact_items,
     render_markdown,
     validate_grounding,
@@ -64,6 +67,7 @@ class ResumeStore:
         }
         return {
             "profile_version": profile["profile_version"],
+            "header": profile["last_confirmed_profile"].get("basic_info", {}),
             "evidence": evidence,
             "context": payload,
         }
@@ -88,6 +92,7 @@ class ResumeStore:
                 for e in current["evidence"]
                 if e["id"] in refs
             ]
+            document = build_document(draft, current["header"])
             resume_id = str(uuid4())
             conn.execute(
                 "INSERT INTO resumes VALUES (?,?,?,?,'completed',?,?,?,?)",
@@ -96,8 +101,8 @@ class ResumeStore:
                     state["job_id"],
                     state["profile_version"],
                     state["language"],
-                    encode(draft.model_dump()),
-                    render_markdown(draft),
+                    encode(document.model_dump()),
+                    render_markdown(document),
                     encode(snapshot),
                     now(),
                 ),
@@ -107,6 +112,8 @@ class ResumeStore:
     def _read(self, conn, row):
         result = dict(row)
         result["structured_resume"] = json.loads(result.pop("structured_resume_json"))
+        result["section_labels"] = LABELS[result["language"]]
+        result["section_order"] = list(SECTION_ORDER)
         result["evidence"] = json.loads(result.pop("evidence_json"))
         job = conn.execute("SELECT * FROM jobs WHERE id=?", (result["job_id"],)).fetchone()
         result["outdated"] = (

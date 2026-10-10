@@ -2,7 +2,20 @@
 
 更新日期：2026-10-10（Asia/Shanghai）
 
-## Current status — Resume generation v2
+## Current status — Resume document structure refactor
+
+- 边界：Profile identity/contact → deterministic Header snapshot；Career Evidence + Job → LLM semantic ResumeDraft；ResumeDocument → Python Markdown renderer。LLM decides what to say. Renderer decides how the resume is organized and displayed. Header/global section order/visual layout 均由程序决定。
+- 检查后发现旧 Profile 实际只有 entries，没有结构化 identity/contact。新增最小用户编辑字段 basic_info（name/phone/email/location），通过现有 PUT /api/profile 保存；保存会递增版本、取消确认，确认时冻结于 last_confirmed_profile。Profile extraction/normalization contract、匹配与 JD 流程不变。姓名需在 Profile 页面填写、保存并确认后才能生成新简历；不从职业 Evidence/原始文本推断姓名。
+- ResumeDraft 删除生成式 headline，只保留 language/summary/sections。复用稳定 kinds：skills/experience/projects/education/additional（additional 即 qualifications）；summary 是独立字段。单个事实仍严格非空且必须引用 Evidence，教育/资质没有豁免。允许空 summary/section lists，由 renderer 省略；整体空内容拒绝。
+- ResumeHeader 不进入 Generation/Revision response contract。ResumeDocument 在语义内容之外带 header；新 artifact 的 structured_resume_json 保存完整快照，Markdown 同事务生成。resumes 表不变；数据库 v6 只增加 profile_basic_info 小表，旧数据无需 identity 回填。
+- Python 固定顺序 Header → Summary → Skills → Experience → Projects → Education → Additional；zh/en/ja labels 来自 Python mapping，API 向 UI 提供 mapping/order。主标题只有姓名，联系方式只显示有值的字段，不出现空 separator。模型保留章节内部项目/bullet/技能顺序的控制权。
+- 历史 Resume JSON/headline 与已保存 Markdown 原样可读，不拿最新 Profile 补写 Header；历史正文 UI 没有 Header 时使用中性 Resume 标题，旧 headline 仍可在 Evidence 中查看，不充当页面主标题。既有 Revision 的输入只含 semantic content；accepted child 继承父 artifact Header（旧 artifact 无 Header 时保持缺失），不能从当前 Profile 更新。联系方式修改请求直接提示先更新 Profile；没有新增 Revision Agent 功能。
+- Generation prompt 收缩为 grounding、Job relevance、GAP/PARTIAL、不虚构、语言、semantic kinds、简洁表达与章节内重点；移除模型标题、全局顺序、联系方式排列、PDF/视觉规则细节。reasoning/timeout/retry/max_output_tokens 保持不变，PDF 未实现。
+- 默认 trace 保持 shape-only；即使打开 development debug payload，也排除 Header/basic_info 与包含联系方式的 rendered Markdown。新 metadata 不作为 Career Evidence，不额外发送给模型；Evidence 自身已有文字仍按既有流程处理。
+- Replay 仅移除被删除字段；旧 headline 承载的负例/唯一修订迁至 summary 保留原 grounding 检查。Revision current_resume payload 改变使对应 fixture 重新计算 key；v1 历史生成 fixture 保持原样。renderer tests 与 LLM eval 分离，离线结果不证明真实模型语义质量。
+- 验证：462 backend tests、32 frontend tests；Ruff check/format、frontend check/build/audit（0 vulnerabilities）；Profile 10、Jobs extraction 12/scoreability 8/matching 5、Resume 6、Revision 8 个 replay eval；独立临时 DB/端口 fake HTTP --resume（含 Header、reject/accept、immutable history）通过。live requests = 0。
+
+## Historical status — Resume generation v2
 
 - 根据用户提供的完整提示词升级为 `resume-generation-v2`，加强语义章节、内容密度、工作/项目去重、语言一致性、Evidence grounding 与内容/排版职责边界。
 - 现有 ResumeDraft contract 保持不变；提示词末尾明确字段映射、必填 headline/summary/至少一个内容章节，以及无 identity/contact 字段。章节省略规则适用于可选内容章节。当前 renderer 仅输出 Markdown，提示词中的 PDF 描述不代表已实现 PDF 导出。

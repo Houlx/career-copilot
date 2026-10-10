@@ -9,6 +9,7 @@ from career_copilot.config import Settings
 from career_copilot.errors import CopilotError
 from career_copilot.models.resumes import (
     ResumeDraft,
+    build_document,
     render_markdown,
     validate_grounding,
     validate_language,
@@ -60,7 +61,7 @@ def main():
                 ]
                 metrics = validate_grounding(output, evidence, 3)
                 validate_language(output, case["payload"]["requested_language"])
-                markdown = render_markdown(output)
+                markdown = render_markdown(build_document(output, {"name": "Synthetic Candidate"}))
                 assert markdown and "career-" not in markdown
                 if case["expected_error"]:
                     success = False

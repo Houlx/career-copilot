@@ -12,7 +12,7 @@ from .job_store import JobStore
 from .models.jobs import JobExtraction, JobRequirements, Matching, ScoreabilityResult
 from .models.profile import NormalizedProfile, ProfileFacts
 from .models.prompts import PROMPTS, DiagnosticResult
-from .models.resumes import Language, ResumeDraft
+from .models.resumes import Language, ResumeDraft, ResumeHeader
 from .models.revisions import ResumeRevisionProposal, RevisionExpected, RevisionInstruction
 from .models.router import ModelRouter
 from .profile_store import ProfileStore
@@ -58,6 +58,7 @@ class RawProfileRequest(VersionRequest):
 
 class EditProfileRequest(VersionRequest):
     profile: NormalizedProfile
+    basic_info: ResumeHeader | None = None
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -194,7 +195,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.put("/api/profile")
     def edit_profile(body: EditProfileRequest):
-        return {"profile": profiles.edit(body.profile, body.expected_version)}
+        return {"profile": profiles.edit(body.profile, body.expected_version, body.basic_info)}
 
     @app.post("/api/profile/confirm")
     def confirm_profile(body: VersionRequest):

@@ -16,7 +16,7 @@ const resume: Resume = {
   evidence: [],
   structured_resume: {
     language: 'en',
-    headline: item,
+    header: { name: '张三' },
     summary: [item],
     sections: [{ kind: 'skills', items: [item] }],
   },
@@ -40,10 +40,10 @@ const pending = {
       proposal: {
         assistant_message: 'Review changes',
         updated_resume: resume.structured_resume,
-        change_summary: [{ section_kind: 'headline', summary: 'Emphasize Python' }],
+        change_summary: [{ section_kind: 'summary', summary: 'Emphasize Python' }],
       },
       diff: [
-        { section_kind: 'headline', before: item, after: { ...item, text: 'Python developer' } },
+        { section_kind: 'summary', before: item, after: { ...item, text: 'Python developer' } },
       ],
     },
   ],

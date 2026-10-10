@@ -24,7 +24,7 @@ const resume: Resume = {
   outdated: false,
   structured_resume: {
     language: 'en',
-    headline: item,
+    header: { name: '张三', phone: '123', email: 'a@example.test', location: '上海' },
     summary: [item],
     sections: [{ kind: 'skills', items: [item] }],
   },
@@ -121,10 +121,10 @@ it('renders detail, evidence, saved Markdown, linked job and print', async () =>
   const go = vi.fn();
   const print = vi.spyOn(window, 'print').mockImplementation(() => {});
   render(<ResumeDetail id="resume" go={go} />);
-  await screen.findByRole('heading', { name: 'Built Python tools' });
+  await screen.findByRole('heading', { name: '张三' });
   expect(screen.getByText(/Profile version: 3/)).toBeInTheDocument();
   fireEvent.click(screen.getByText('Show Evidence'));
-  expect(screen.getAllByText('Used Python at Synthetic Studio')).toHaveLength(3);
+  expect(screen.getAllByText('Used Python at Synthetic Studio')).toHaveLength(2);
   fireEvent.click(screen.getByRole('button', { name: 'Markdown View' }));
   expect(screen.getByText('# Built Python tools')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Print / Save as PDF' }));
@@ -143,5 +143,50 @@ it('keeps outdated resume readable', async () => {
   );
   render(<ResumeDetail id="resume" go={vi.fn()} />);
   await screen.findByText(/This resume was generated from an older Career Profile/);
-  expect(screen.getByRole('heading', { name: 'Built Python tools' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: '张三' })).toBeInTheDocument();
+});
+
+it('uses deterministic header, server labels and section order in the document', async () => {
+  const artifact = structuredClone(resume);
+  artifact.section_labels = {
+    summary: 'Professional Summary',
+    skills: 'Skills',
+    experience: 'Work Experience',
+    projects: 'Projects',
+  };
+  artifact.section_order = ['skills', 'experience', 'projects'];
+  artifact.structured_resume.sections = [
+    { kind: 'projects', items: [] },
+    { kind: 'experience', items: [item] },
+    { kind: 'skills', items: [item] },
+  ];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => ({ ok: true, json: async () => ({ resume: artifact }) })),
+  );
+  const { container } = render(<ResumeDetail id="resume" go={vi.fn()} />);
+  await screen.findByRole('heading', { name: '张三' });
+  const document = container.querySelector('.resume-document')!;
+  expect(document.querySelectorAll('h1')).toHaveLength(1);
+  expect(document.textContent).toContain('123 | a@example.test | 上海');
+  expect(Array.from(document.querySelectorAll('h2')).map((h) => h.textContent)).toEqual([
+    'Professional Summary',
+    'Skills',
+    'Work Experience',
+  ]);
+});
+
+it('reads historical headline artifacts without treating headline as the page title', async () => {
+  const artifact = structuredClone(resume);
+  delete artifact.structured_resume.header;
+  artifact.structured_resume.headline = { ...item, text: 'Long legacy career headline' };
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => ({ ok: true, json: async () => ({ resume: artifact }) })),
+  );
+  render(<ResumeDetail id="resume" go={vi.fn()} />);
+  await screen.findByRole('heading', { name: 'Resume' });
+  expect(
+    screen.queryByRole('heading', { name: 'Long legacy career headline' }),
+  ).not.toBeInTheDocument();
 });

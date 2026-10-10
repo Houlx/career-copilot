@@ -74,7 +74,7 @@ class RevisionArtifact(StrictModel):
 def revision_diff(before, after):
     """Authoritative deterministic diff, including ordering and evidence changes."""
     changes = []
-    for key in ("headline", "summary", "sections"):
+    for key in ("summary", "sections"):
         if before[key] != after[key]:
             changes.append({"section_kind": key, "before": before[key], "after": after[key]})
     return changes

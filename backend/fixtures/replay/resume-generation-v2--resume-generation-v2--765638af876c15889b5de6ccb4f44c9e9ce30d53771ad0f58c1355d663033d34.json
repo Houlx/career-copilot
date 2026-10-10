@@ -3,12 +3,6 @@
   "prompt_version": "resume-generation-v2",
   "output": {
     "language": "en",
-    "headline": {
-      "text": "Python engineer",
-      "evidence_ids": [
-        "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-      ]
-    },
     "summary": [
       {
         "text": "Built Python 3.12 services and a React prototype.",

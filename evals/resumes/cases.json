@@ -73,12 +73,6 @@
     },
     "expected": {
       "language": "en",
-      "headline": {
-        "text": "Python engineer",
-        "evidence_ids": [
-          "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-        ]
-      },
       "summary": [
         {
           "text": "Built Python 3.12 services and a React prototype.",
@@ -206,18 +200,11 @@
     },
     "expected": {
       "language": "en",
-      "headline": {
-        "text": "Python engineer",
-        "evidence_ids": [
-          "career-work-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
-        ]
-      },
       "summary": [
         {
-          "text": "Built Python 3.12 services and a React prototype.",
+          "text": "Python engineer",
           "evidence_ids": [
-            "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-            "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            "career-work-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
           ]
         }
       ],
@@ -339,12 +326,6 @@
     },
     "expected": {
       "language": "en",
-      "headline": {
-        "text": "Python engineer",
-        "evidence_ids": [
-          "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-        ]
-      },
       "summary": [
         {
           "text": "Built Python 3.12 services and a React prototype.",
@@ -469,12 +450,6 @@
     },
     "expected": {
       "language": "en",
-      "headline": {
-        "text": "Python engineer",
-        "evidence_ids": [
-          "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-        ]
-      },
       "summary": [
         {
           "text": "Built Python 3.12 services and a React prototype.",
@@ -602,12 +577,6 @@
     },
     "expected": {
       "language": "ja",
-      "headline": {
-        "text": "Python engineer",
-        "evidence_ids": [
-          "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-        ]
-      },
       "summary": [
         {
           "text": "Built Python 3.12 services and a React prototype.",
@@ -735,12 +704,6 @@
     },
     "expected": {
       "language": "en",
-      "headline": {
-        "text": "Python engineer",
-        "evidence_ids": [
-          "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-        ]
-      },
       "sections": [
         {
           "kind": "skills",

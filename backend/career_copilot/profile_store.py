@@ -32,6 +32,10 @@ class ProfileStore:
         profile = dict(row)
         for key in JSON_FIELDS:
             profile[key] = json.loads(profile[key]) if profile[key] is not None else None
+        identity = conn.execute(
+            "SELECT metadata_json FROM profile_basic_info WHERE id=1"
+        ).fetchone()
+        profile["basic_info"] = json.loads(identity[0]) if identity else {}
         profile["confirmed"] = bool(profile["confirmed"])
         profile["effective_profile"] = (
             profile["user_edited_profile"] or profile["ai_normalized_profile"]
@@ -124,15 +128,24 @@ class ProfileStore:
         ):
             raise CopilotError(ErrorCode.PROFILE_VALIDATION_FAILED)
 
-    def edit(self, edited: NormalizedProfile, version: int):
+    def edit(self, edited: NormalizedProfile, version: int, basic_info=None):
         with self.db.connect() as conn:
             profile = self._locked(conn, version)
             self._editable(profile)
             validate_profile(
                 edited, ProfileFacts.model_validate(profile["extracted_facts"]), generated=False
             )
-            if edited.model_dump() == profile["effective_profile"]:
+            identity = basic_info.model_dump() if basic_info is not None else profile["basic_info"]
+            if (
+                edited.model_dump() == profile["effective_profile"]
+                and identity == profile["basic_info"]
+            ):
                 return profile
+            conn.execute(
+                "INSERT INTO profile_basic_info VALUES (1,?) ON CONFLICT(id) "
+                "DO UPDATE SET metadata_json=excluded.metadata_json",
+                (encode(identity),),
+            )
             conn.execute(
                 "UPDATE career_profile SET user_edited_profile=?,confirmed=0,confirmed_at=NULL,"
                 "profile_version=?,updated_at=? WHERE id=1",
@@ -187,6 +200,7 @@ class ProfileStore:
                 )
             snapshot = {
                 "profile": effective.model_dump(),
+                "basic_info": profile["basic_info"],
                 "profile_version": new_version,
                 "confirmed_at": stamp,
             }

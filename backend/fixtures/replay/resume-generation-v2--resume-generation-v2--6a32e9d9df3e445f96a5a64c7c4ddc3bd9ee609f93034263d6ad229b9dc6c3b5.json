@@ -3,12 +3,6 @@
   "prompt_version": "resume-generation-v2",
   "output": {
     "language": "en",
-    "headline": {
-      "text": "Python engineer",
-      "evidence_ids": [
-        "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-      ]
-    },
     "sections": [
       {
         "kind": "skills",
