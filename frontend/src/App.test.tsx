@@ -16,7 +16,12 @@ const settings = {
       timeout_seconds: 30,
     },
   ],
-  task_policies: { 'profile-facts-v1': { reasoning_effort: 'low' } },
+  task_policies: {
+    'profile-facts-v1': { reasoning_effort: 'low' },
+    'jd-requirements-v2': { reasoning_effort: 'high' },
+    'matching-v1': { reasoning_effort: 'high' },
+    'resume-generation-v1': { reasoning_effort: 'high' },
+  },
   prompts: { diagnostic: 'diagnostic-v1' },
 };
 const detail = {
@@ -148,6 +153,10 @@ describe('Generation reasoning configuration', () => {
     expect(screen.getByText('Task inference policies')).toBeInTheDocument();
     expect(screen.getByText('profile-facts-v1')).toBeInTheDocument();
     expect(screen.getByText('low')).toBeInTheDocument();
+    expect(screen.getByText('jd-requirements-v2')).toBeInTheDocument();
+    expect(screen.getByText('matching-v1')).toBeInTheDocument();
+    expect(screen.getByText('resume-generation-v1')).toBeInTheDocument();
+    expect(screen.getAllByText('high')).toHaveLength(3);
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     expect(vi.mocked(fetch).mock.calls.every(([, options]) => options === undefined)).toBe(true);

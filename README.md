@@ -1,6 +1,6 @@
 # Career Copilot
 
-独立的、面向个人求职的 Workflow-first AI 应用。当前 **Phase 4.3 完成**：唯一 task policy 为 `profile-facts-v1 → low`；其余 Generation tasks 在 role reasoning unset 时使用 Provider 默认行为。优先级为 task-specific → role-level fallback → provider default。Settings 只读展示 task policy，trace 记录 effective reasoning 与来源。本地 `.env` 已注释全局 reasoning override，timeout 仍 60/30 秒；完整重启后端后生效。全部验证 0 live requests，没有进入 Phase 5。实验依据、实现及用户人工验证步骤见 [PHASE_4_3.md](docs/PHASE_4_3.md)；历史配置能力见 [PHASE_4_2.md](docs/PHASE_4_2.md)。
+独立的、面向个人求职的 Workflow-first AI 应用。当前 **Phase 4.4 完成**，结构化输出由 Pydantic contract 驱动。Generation task policy：`profile-facts-v1 → low`，`jd-requirements-v2 / matching-v1 / resume-generation-v1 → high`；其余 Generation tasks 在 role reasoning unset 时使用 Provider 默认行为。优先级为 task-specific → role-level fallback → provider default。Settings 只读展示 task policy，trace 记录 effective reasoning 与来源。修改配置或代码后重启后端生效。当前交接见 [HANDOFF.md](docs/HANDOFF.md)，结构化输出设计见 [STRUCTURED_OUTPUT_CONTRACT.md](docs/STRUCTURED_OUTPUT_CONTRACT.md)；历史配置能力见 [PHASE_4_2.md](docs/PHASE_4_2.md) 和 [PHASE_4_3.md](docs/PHASE_4_3.md)。
 
 Generation/GLM 负责 Profile facts、normalization、JD requirements、matching 和 Resume generation；Judge/Jev 只负责有限候选上的 scoreability。结果和指标见 [PHASE_3_5B_R.md](docs/PHASE_3_5B_R.md)。原 Jev 开放文本 extraction 的失败探索保留在 [PHASE_3_5B.md](docs/PHASE_3_5B.md)。
 
@@ -133,7 +133,7 @@ uv run python scripts/check_http.py
 - Jev 必须配置专用 `JUDGE_MODEL / JUDGE_BASE_URL / JUDGE_API_KEY`，不回退共享配置；base URL 包含 version（不含 `/systemone`），model ID 不硬编码。
 - 新增 `judge-diagnostic-v1` / `generation-diagnostic-v1`（各 128 output tokens），只使用 synthetic 输入。原可执行 AI tasks：`diagnostic`（prompt `diagnostic-v1`，128 tokens）、`profile-facts-v1`（Generation）及 `profile-normalize-v1`（Generation，各 6000 output tokens）；temperature=0。
 - `GENERATION_TIMEOUT_SECONDS` / `JUDGE_TIMEOUT_SECONDS`：默认均 30 秒，必须满足有限数值 `0 < timeout <= 300`，非法配置启动报错。角色配置注入 Provider；Settings API/页面和 AI trace 显示 `timeout_seconds`。本地 Phase 4.1 Generation 显式覆盖 60 秒，Judge 保留 30 秒。沿用 HTTPX 各阶段 timeout 与原 latency/retry 语义。
-- `GENERATION_REASONING_EFFORT=low|high|max` 是可选全局 fallback，task-specific policy 优先。默认 unset，只有 `profile-facts-v1` 显式 low，其他 Generation task 不发送 reasoning override。
+- `GENERATION_REASONING_EFFORT=low|high|max` 是可选全局 fallback，task-specific policy 优先。默认 unset；`profile-facts-v1` 显式 low，`jd-requirements-v2`、`matching-v1` 和 `resume-generation-v1` 显式 high，其余 Generation task 使用角色配置或 Provider 默认行为。
 - `.env`、数据库、个人信息和 secret 不提交 Git。Settings 不返回 secret 或 provider URL。
 
 独立 replay：

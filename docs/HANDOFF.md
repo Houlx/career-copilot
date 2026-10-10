@@ -2,6 +2,13 @@
 
 更新日期：2026-10-10（Asia/Shanghai）
 
+## Current update — Resume reasoning policy
+
+- `resume-generation-v1` 新增显式 `reasoning_effort=high`，优先于 Generation role fallback。当前 Generation 显式策略为 facts=low、JD v2/matching/resume=high；normalize/diagnostic 继续使用 role fallback 或 Provider 默认行为。
+- 更新固定 task policy 断言和前端 Settings fixture/显示断言；现有测试继续验证 Resume 在两种 structured output 模式下的精确 wire，以及 fake/replay/mock live 成功和失败的持久化 reasoning metadata。README 和 `.env.example` 同步当前策略。历史阶段记录保留当时配置。
+- 重启 backend 后，Settings 应显示 resume-generation-v1=high；Resume trace 应为 reasoning_effort=high、reasoning_source=task。离线回归不能证明真实模型质量或耗时改善。
+- 验证：420 backend / 25 frontend tests、Ruff check/format、frontend check/build/audit（0 vulnerabilities）、Profile 10-case、Jobs 12/8/5-case、Resume 6-case replay eval 全通过。独立临时端口/空 DB fake HTTP `--resume` 全流程通过，Settings 与 Resume high/task trace 正常；临时服务和 DB 已清理。0 live requests。
+
 ## Current status — Phase 4.4
 
 **Pydantic-driven structured output contracts 完成。Agent live requests=0，没有 Phase 5。**

@@ -301,6 +301,7 @@ def test_existing_task_overrides_preserved():
         "jd-extract-v1": "low",
         "jd-requirements-v2": "high",
         "matching-v1": "high",
+        "resume-generation-v1": "high",
     }
 
 
