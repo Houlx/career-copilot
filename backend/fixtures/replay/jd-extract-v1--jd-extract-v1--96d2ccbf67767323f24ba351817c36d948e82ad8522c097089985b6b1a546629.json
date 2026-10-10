@@ -1,0 +1,15 @@
+{
+  "task": "jd-extract-v1",
+  "prompt_version": "jd-extract-v1",
+  "output": {
+    "title": "Synthetic role 8",
+    "requirements": [
+      {
+        "text": "Python 或 Java",
+        "category": "skill",
+        "importance": "required",
+        "scoreability": "SCORED"
+      }
+    ]
+  }
+}

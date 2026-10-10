@@ -1,0 +1,170 @@
+[
+  {
+    "id": "match-0",
+    "payload": {
+      "requirements": [
+        {
+          "text": "Python",
+          "category": "skill",
+          "importance": "required",
+          "scoreability": "SCORED",
+          "requirement_index": 0
+        }
+      ],
+      "evidence": [
+        {
+          "id": "synthetic-0",
+          "type": "skill",
+          "title": "Synthetic evidence",
+          "normalized_content": "Python"
+        }
+      ]
+    },
+    "expected": {
+      "matches": [
+        {
+          "requirement_index": 0,
+          "status": "MATCH",
+          "evidence_ids": [
+            "synthetic-0"
+          ],
+          "reason": "Reviewed synthetic reference."
+        }
+      ]
+    }
+  },
+  {
+    "id": "match-1",
+    "payload": {
+      "requirements": [
+        {
+          "text": "Python and C++",
+          "category": "skill",
+          "importance": "required",
+          "scoreability": "SCORED",
+          "requirement_index": 0
+        }
+      ],
+      "evidence": [
+        {
+          "id": "synthetic-1",
+          "type": "skill",
+          "title": "Synthetic evidence",
+          "normalized_content": "Python"
+        }
+      ]
+    },
+    "expected": {
+      "matches": [
+        {
+          "requirement_index": 0,
+          "status": "PARTIAL",
+          "evidence_ids": [
+            "synthetic-1"
+          ],
+          "reason": "Reviewed synthetic reference."
+        }
+      ]
+    }
+  },
+  {
+    "id": "match-2",
+    "payload": {
+      "requirements": [
+        {
+          "text": "SQL",
+          "category": "skill",
+          "importance": "required",
+          "scoreability": "SCORED",
+          "requirement_index": 0
+        }
+      ],
+      "evidence": [
+        {
+          "id": "synthetic-2",
+          "type": "skill",
+          "title": "Synthetic evidence",
+          "normalized_content": "Python"
+        }
+      ]
+    },
+    "expected": {
+      "matches": [
+        {
+          "requirement_index": 0,
+          "status": "GAP",
+          "evidence_ids": [],
+          "reason": "Reviewed synthetic reference."
+        }
+      ]
+    }
+  },
+  {
+    "id": "match-3",
+    "payload": {
+      "requirements": [
+        {
+          "text": "计算机相关专业",
+          "category": "skill",
+          "importance": "required",
+          "scoreability": "SCORED",
+          "requirement_index": 0
+        }
+      ],
+      "evidence": [
+        {
+          "id": "synthetic-3",
+          "type": "skill",
+          "title": "Synthetic evidence",
+          "normalized_content": "信息系统学"
+        }
+      ]
+    },
+    "expected": {
+      "matches": [
+        {
+          "requirement_index": 0,
+          "status": "PARTIAL",
+          "evidence_ids": [
+            "synthetic-3"
+          ],
+          "reason": "Reviewed synthetic reference."
+        }
+      ]
+    }
+  },
+  {
+    "id": "match-4",
+    "payload": {
+      "requirements": [
+        {
+          "text": "团队协作交付",
+          "category": "skill",
+          "importance": "required",
+          "scoreability": "SCORED",
+          "requirement_index": 0
+        }
+      ],
+      "evidence": [
+        {
+          "id": "synthetic-4",
+          "type": "skill",
+          "title": "Synthetic evidence",
+          "normalized_content": "与产品测试协作交付"
+        }
+      ]
+    },
+    "expected": {
+      "matches": [
+        {
+          "requirement_index": 0,
+          "status": "MATCH",
+          "evidence_ids": [
+            "synthetic-4"
+          ],
+          "reason": "Reviewed synthetic reference."
+        }
+      ]
+    }
+  }
+]

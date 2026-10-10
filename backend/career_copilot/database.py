@@ -51,7 +51,25 @@ CREATE TABLE IF NOT EXISTS career_evidence (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
-PRAGMA user_version = 2;
+CREATE TABLE IF NOT EXISTS jobs (
+ id TEXT PRIMARY KEY, raw_jd TEXT NOT NULL, title TEXT NOT NULL,
+ status TEXT NOT NULL CHECK(status IN ('draft','analyzing','completed','failed')),
+ profile_version INTEGER NOT NULL, coverage REAL,
+ created_at TEXT NOT NULL, updated_at TEXT NOT NULL, completed_at TEXT
+);
+CREATE TABLE IF NOT EXISTS job_requirements (
+ id TEXT NOT NULL, job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+ text TEXT NOT NULL, importance TEXT NOT NULL, category TEXT NOT NULL,
+ scoreability TEXT NOT NULL, sequence INTEGER NOT NULL,
+ PRIMARY KEY(job_id,id), UNIQUE(job_id,sequence)
+);
+CREATE TABLE IF NOT EXISTS job_matches (
+ job_id TEXT NOT NULL, requirement_id TEXT NOT NULL, status TEXT NOT NULL,
+ reason TEXT NOT NULL, evidence_ids TEXT NOT NULL,
+ PRIMARY KEY(job_id,requirement_id),
+ FOREIGN KEY(job_id,requirement_id) REFERENCES job_requirements(job_id,id) ON DELETE CASCADE
+);
+PRAGMA user_version = 3;
 """
 
 
@@ -73,7 +91,7 @@ class Database:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as conn:
             conn.execute("PRAGMA journal_mode = WAL")
-            if conn.execute("PRAGMA user_version").fetchone()[0] > 2:
+            if conn.execute("PRAGMA user_version").fetchone()[0] > 3:
                 raise CopilotError(ErrorCode.PERSISTENCE_FAILED)
             conn.executescript(SCHEMA)
 

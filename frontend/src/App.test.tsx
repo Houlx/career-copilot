@@ -117,7 +117,7 @@ describe('Phase 1 shell', () => {
   it('does not start a workflow on initial load', async () => {
     render(<App />);
     await screen.findByText('让每一步，都有依据。');
-    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch).toHaveBeenCalledTimes(3);
     expect(vi.mocked(fetch).mock.calls.every(([, options]) => options === undefined)).toBe(true);
     expect(fetch).toHaveBeenCalledWith('/api/settings', undefined);
   });

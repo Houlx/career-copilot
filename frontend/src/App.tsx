@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { JobDetail, JobHistory, JobsPage } from './Jobs';
 import { ProfilePage, ProfileSummary } from './Profile';
 import { api, type DummyResponse, type Run, type RunDetail, type Settings } from './api';
 
@@ -37,9 +38,10 @@ function Dashboard({ go, debugEnabled }: { go: (path: string) => void; debugEnab
       <h1>让每一步，都有依据。</h1>
       <p className="lead">从真实职业经历出发，理解岗位要求，准备属于你的下一步。</p>
       <div className="hero-note">
-        <span className="dot" /> Phase 2 · Career Profile 已就绪
+        <span className="dot" /> Phase 3 · Job Analysis 已就绪
       </div>
       <ProfileSummary />
+      <JobHistory go={go} compact />
       <div className="steps">
         {[
           ['01', '整理职业资料', '提取事实，编辑并确认', 'Phase 2'],
@@ -51,7 +53,7 @@ function Dashboard({ go, debugEnabled }: { go: (path: string) => void; debugEnab
             <h2>{title}</h2>
             <p>{text}</p>
             <span className="tag">
-              {phase} · {phase === 'Phase 2' ? '已开放' : '尚未实现'}
+              {phase} · {phase !== 'Phase 4' ? '已开放' : '尚未实现'}
             </span>
           </article>
         ))}
@@ -195,11 +197,33 @@ function DebugRuns({ path, go }: { path: string; go: (path: string) => void }) {
         source_quote: '使用 Python。',
       };
       const payload =
-        replayTask === 'profile-facts-v1'
-          ? { raw_input: '使用 Python。' }
-          : replayTask === 'profile-normalize-v1'
-            ? { facts: [fact] }
-            : {};
+        replayTask === 'jd-extract-v1'
+          ? { raw_jd: 'Synthetic Python developer. Python required.' }
+          : replayTask === 'matching-v1'
+            ? {
+                requirements: [
+                  {
+                    requirement_index: 0,
+                    text: 'Python',
+                    importance: 'required',
+                    category: 'skill',
+                    scoreability: 'SCORED',
+                  },
+                ],
+                evidence: [
+                  {
+                    id: 'synthetic-python',
+                    type: 'skill',
+                    title: 'Python',
+                    normalized_content: 'Python',
+                  },
+                ],
+              }
+            : replayTask === 'profile-facts-v1'
+              ? { raw_input: '使用 Python。' }
+              : replayTask === 'profile-normalize-v1'
+                ? { facts: [fact] }
+                : {};
       setReplay(await api('/debug/replay', { task: replayTask, payload }));
     } catch (e) {
       setError(String(e));
@@ -342,6 +366,8 @@ function DebugRuns({ path, go }: { path: string; go: (path: string) => void }) {
           Replay task
           <select value={replayTask} onChange={(e) => setReplayTask(e.target.value)}>
             <option value="diagnostic">diagnostic</option>
+            <option value="jd-extract-v1">jd-extract-v1</option>
+            <option value="matching-v1">matching-v1</option>
             <option value="profile-facts-v1">profile-facts-v1</option>
             <option value="profile-normalize-v1">profile-normalize-v1</option>
           </select>
@@ -409,7 +435,7 @@ export default function App() {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <span className="dot" /> 本地个人工作空间<small>Phase 2 · v0.2.0</small>
+          <span className="dot" /> 本地个人工作空间<small>Phase 3 · v0.3.0</small>
         </div>
       </aside>
       <div className="workspace">
@@ -433,6 +459,10 @@ export default function App() {
               fakeMode={settings.ai_mode === 'fake'}
               debugEnabled={settings.debug_enabled}
             />
+          ) : path === '/jobs' ? (
+            <JobsPage go={go} fakeMode={settings.ai_mode === 'fake'} />
+          ) : path.startsWith('/jobs/') ? (
+            <JobDetail id={path.slice(6)} go={go} debugEnabled={settings.debug_enabled} />
           ) : path === '/settings' ? (
             <SettingsPage settings={settings} />
           ) : path.startsWith('/debug/runs') && settings.debug_enabled ? (
@@ -443,7 +473,7 @@ export default function App() {
               <h1>{placeholder}</h1>
               <section className="card">
                 <h2>将在后续阶段开放</h2>
-                <p>职业资料已开放。岗位分析和简历生成将在后续阶段实现。</p>
+                <p>职业资料和岗位分析已开放。简历生成将在后续阶段实现。</p>
                 <button onClick={() => go('/')}>返回概览</button>
               </section>
             </>

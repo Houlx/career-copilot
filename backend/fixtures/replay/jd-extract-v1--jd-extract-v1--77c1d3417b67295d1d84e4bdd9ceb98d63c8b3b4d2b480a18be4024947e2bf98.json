@@ -1,0 +1,15 @@
+{
+  "task": "jd-extract-v1",
+  "prompt_version": "jd-extract-v1",
+  "output": {
+    "title": "Synthetic role 11",
+    "requirements": [
+      {
+        "text": "PMP 证书",
+        "category": "certification",
+        "importance": "required",
+        "scoreability": "SCORED"
+      }
+    ]
+  }
+}

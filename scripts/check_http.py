@@ -12,6 +12,7 @@ def main():
     parser.add_argument(
         "--profile", action="store_true", help="Exercise Profile on an empty test DB"
     )
+    parser.add_argument("--jobs", action="store_true", help="Exercise Jobs on an empty test DB")
     args = parser.parse_args()
     with (
         httpx.Client(base_url=args.backend, timeout=10) as backend,
@@ -19,7 +20,7 @@ def main():
     ):
         health = backend.get("/api/health")
         health.raise_for_status()
-        assert health.json() == {"status": "ok", "phase": 2}
+        assert health.json() == {"status": "ok", "phase": 3}
         config = frontend.get("/api/settings")
         config.raise_for_status()
         assert config.json()["ai_mode"] == "fake", "Run smoke check with AI_MODE=fake"
@@ -48,7 +49,7 @@ def main():
         assert response.json()["metadata"]["provider"] == "replay"
         assert response.json()["metadata"]["total_tokens"] == 0
         assert backend.get("/api/debug/runs").json() == before
-        if args.profile:
+        if args.profile or args.jobs:
             assert backend.get("/api/profile").json()["profile"] is None, (
                 "Use an empty temporary DB"
             )
@@ -93,9 +94,65 @@ def main():
                 assert replay["metadata"]["provider"] == "replay"
             assert backend.get("/api/debug/runs").json() == before
             assert backend.get("/api/profile").json()["profile"] == confirmed
+        if args.jobs:
+            assert backend.get("/api/jobs").json() == {"jobs": []}
+            result = post("/api/jobs/analyze", {"raw_jd": "Synthetic Python developer JD"})
+            job = result["job"]
+            assert job["coverage"] == 66.7 and not job["outdated"]
+            assert len(job["requirements"]) == 4
+            assert job["requirements"][0]["match"]["evidence"][0]["normalized_content"]
+            assert backend.get(f"/api/jobs/{job['id']}").json()["job"] == job
+            nodes = backend.get(f"/api/debug/runs/{result['run_id']}").json()["nodes"]
+            assert len(nodes) == 8
+            assert nodes[1]["ai"]["prompt_version"] == "jd-extract-v1"
+            assert nodes[4]["ai"]["prompt_version"] == "matching-v1"
+            before = backend.get("/api/debug/runs").json()
+            for task, payload in [
+                ("jd-extract-v1", {"raw_jd": "Synthetic Python developer. Python required."}),
+                (
+                    "matching-v1",
+                    {
+                        "requirements": [
+                            {
+                                "requirement_index": 0,
+                                "text": "Python",
+                                "importance": "required",
+                                "category": "skill",
+                                "scoreability": "SCORED",
+                            }
+                        ],
+                        "evidence": [
+                            {
+                                "id": "synthetic-python",
+                                "type": "skill",
+                                "title": "Python",
+                                "normalized_content": "Python",
+                            }
+                        ],
+                    },
+                ),
+            ]:
+                assert (
+                    post("/api/debug/replay", {"task": task, "payload": payload})["metadata"][
+                        "provider"
+                    ]
+                    == "replay"
+                )
+            assert backend.get("/api/debug/runs").json() == before
+            assert backend.get("/api/jobs").json()["jobs"] == [job]
+            post(
+                "/api/profile/raw",
+                {"raw_input": "Changed synthetic profile.", "expected_version": 4},
+            )
+            assert backend.get(f"/api/jobs/{job['id']}").json()["job"]["outdated"]
+            assert (
+                frontend.post("/api/jobs/analyze", json={"raw_jd": "Synthetic"}).status_code == 422
+            )
     print("PASS: HTTP → Vite proxy → FastAPI → LangGraph → SQLite → trace response")
     print("PASS: debug UI shell / node diff / standalone replay; 0 live API calls")
-    if args.profile:
+    if args.jobs:
+        print("PASS: Jobs analysis / coverage / evidence / eight traces / replays / outdated gate")
+    if args.profile or args.jobs:
         print(
             "PASS: Profile raw / normalize / edit / atomic confirm / stable evidence / task replays"
         )

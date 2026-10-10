@@ -1,0 +1,15 @@
+{
+  "task": "jd-extract-v1",
+  "prompt_version": "jd-extract-v1",
+  "output": {
+    "title": "Synthetic scoreability",
+    "requirements": [
+      {
+        "text": "接受出差",
+        "category": "logistics",
+        "importance": "required",
+        "scoreability": "NEEDS_CONFIRMATION"
+      }
+    ]
+  }
+}

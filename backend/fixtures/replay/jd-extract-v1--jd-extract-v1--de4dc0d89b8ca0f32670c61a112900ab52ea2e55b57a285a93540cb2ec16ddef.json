@@ -1,0 +1,15 @@
+{
+  "task": "jd-extract-v1",
+  "prompt_version": "jd-extract-v1",
+  "output": {
+    "title": "Synthetic role 7",
+    "requirements": [
+      {
+        "text": "责任心强",
+        "category": "personal_trait",
+        "importance": "required",
+        "scoreability": "NON_SCORABLE"
+      }
+    ]
+  }
+}

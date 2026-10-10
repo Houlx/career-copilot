@@ -531,3 +531,12 @@ fieldset {
 code {
   overflow-wrap: anywhere;
 }
+
+.requirement {
+  border-bottom: 1px solid var(--border, #ddd);
+  padding: 16px 0;
+}
+.raw-jd {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

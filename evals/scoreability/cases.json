@@ -1,0 +1,138 @@
+[
+  {
+    "id": "score-0",
+    "payload": {
+      "raw_jd": "Synthetic policy: 身体健康"
+    },
+    "expected": {
+      "title": "Synthetic scoreability",
+      "requirements": [
+        {
+          "text": "身体健康",
+          "category": "personal_trait",
+          "importance": "required",
+          "scoreability": "NON_SCORABLE"
+        }
+      ]
+    }
+  },
+  {
+    "id": "score-1",
+    "payload": {
+      "raw_jd": "Synthetic policy: 吃苦耐劳"
+    },
+    "expected": {
+      "title": "Synthetic scoreability",
+      "requirements": [
+        {
+          "text": "吃苦耐劳",
+          "category": "personal_trait",
+          "importance": "required",
+          "scoreability": "NON_SCORABLE"
+        }
+      ]
+    }
+  },
+  {
+    "id": "score-2",
+    "payload": {
+      "raw_jd": "Synthetic policy: 爱岗敬业"
+    },
+    "expected": {
+      "title": "Synthetic scoreability",
+      "requirements": [
+        {
+          "text": "爱岗敬业",
+          "category": "personal_trait",
+          "importance": "required",
+          "scoreability": "NON_SCORABLE"
+        }
+      ]
+    }
+  },
+  {
+    "id": "score-3",
+    "payload": {
+      "raw_jd": "Synthetic policy: 道德品质"
+    },
+    "expected": {
+      "title": "Synthetic scoreability",
+      "requirements": [
+        {
+          "text": "道德品质",
+          "category": "personal_trait",
+          "importance": "required",
+          "scoreability": "NON_SCORABLE"
+        }
+      ]
+    }
+  },
+  {
+    "id": "score-4",
+    "payload": {
+      "raw_jd": "Synthetic policy: 接受出差"
+    },
+    "expected": {
+      "title": "Synthetic scoreability",
+      "requirements": [
+        {
+          "text": "接受出差",
+          "category": "logistics",
+          "importance": "required",
+          "scoreability": "NEEDS_CONFIRMATION"
+        }
+      ]
+    }
+  },
+  {
+    "id": "score-5",
+    "payload": {
+      "raw_jd": "Synthetic policy: 接受搬迁"
+    },
+    "expected": {
+      "title": "Synthetic scoreability",
+      "requirements": [
+        {
+          "text": "接受搬迁",
+          "category": "logistics",
+          "importance": "required",
+          "scoreability": "NEEDS_CONFIRMATION"
+        }
+      ]
+    }
+  },
+  {
+    "id": "score-6",
+    "payload": {
+      "raw_jd": "Synthetic policy: Python"
+    },
+    "expected": {
+      "title": "Synthetic scoreability",
+      "requirements": [
+        {
+          "text": "Python",
+          "category": "skill",
+          "importance": "required",
+          "scoreability": "SCORED"
+        }
+      ]
+    }
+  },
+  {
+    "id": "score-7",
+    "payload": {
+      "raw_jd": "Synthetic policy: 与产品、测试、算法团队协作交付"
+    },
+    "expected": {
+      "title": "Synthetic scoreability",
+      "requirements": [
+        {
+          "text": "与产品、测试、算法团队协作交付",
+          "category": "capability",
+          "importance": "required",
+          "scoreability": "SCORED"
+        }
+      ]
+    }
+  }
+]

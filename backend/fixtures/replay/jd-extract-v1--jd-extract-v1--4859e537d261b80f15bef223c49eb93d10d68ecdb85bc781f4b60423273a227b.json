@@ -1,0 +1,15 @@
+{
+  "task": "jd-extract-v1",
+  "prompt_version": "jd-extract-v1",
+  "output": {
+    "title": "Synthetic role 4",
+    "requirements": [
+      {
+        "text": "三年以上开发经验",
+        "category": "experience",
+        "importance": "required",
+        "scoreability": "SCORED"
+      }
+    ]
+  }
+}

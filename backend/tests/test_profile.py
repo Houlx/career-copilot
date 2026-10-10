@@ -191,7 +191,7 @@ def test_v1_upgrade_preserves_trace(settings):
     db.initialize()
     assert db.get_run("old")["nodes"] == [{"sequence": 1}]
     with db.connect() as conn:
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 2
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
 
 
 def test_trace_metadata_and_hidden_payload(client):

@@ -79,3 +79,33 @@ export interface ProfileResponse {
   profile: CareerProfile | null;
   run_id?: string;
 }
+
+export interface JobEvidence {
+  id: string;
+  type: string;
+  title: string;
+  normalized_content: string;
+}
+export interface JobRequirement {
+  id: string;
+  text: string;
+  importance: 'required' | 'preferred';
+  category: string;
+  scoreability: 'SCORED' | 'NEEDS_CONFIRMATION' | 'NON_SCORABLE';
+  match: {
+    status: 'MATCH' | 'PARTIAL' | 'GAP';
+    reason: string;
+    evidence_ids: string[];
+    evidence: JobEvidence[];
+  } | null;
+}
+export interface Job {
+  id: string;
+  title: string;
+  raw_jd: string;
+  status: string;
+  coverage: number | null;
+  profile_version: number;
+  outdated: boolean;
+  requirements: JobRequirement[];
+}

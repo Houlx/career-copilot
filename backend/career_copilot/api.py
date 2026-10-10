@@ -8,18 +8,26 @@ from pydantic import BaseModel, ConfigDict, Field
 from .config import Settings
 from .database import Database
 from .errors import CopilotError, ErrorCode, WorkflowError
+from .job_store import JobStore
+from .models.jobs import JobExtraction, Matching
 from .models.profile import NormalizedProfile, ProfileFacts
 from .models.prompts import PROMPTS, DiagnosticResult
 from .models.router import ModelRouter
 from .profile_store import ProfileStore
 from .tracing import RunTrace
 from .workflows.dummy import build_dummy_graph
+from .workflows.jobs import build_job_graph
 from .workflows.profile import build_profile_graph
 
 
 class DummyRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     message: str = Field(default="Career Copilot", min_length=1, max_length=500)
+
+
+class AnalyzeJobRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    raw_jd: str = Field(min_length=1, max_length=30000)
 
 
 class ReplayRequest(BaseModel):
@@ -46,6 +54,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     db = Database(settings.database_path)
     router = ModelRouter(settings)
     profiles = ProfileStore(db)
+    jobs = JobStore(db)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -79,7 +88,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/api/health")
     def health():
-        return {"status": "ok", "phase": 2}
+        return {"status": "ok", "phase": 3}
 
     @app.get("/api/settings")
     def read_settings():
@@ -141,6 +150,33 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def confirm_profile(body: VersionRequest):
         return {"profile": profiles.confirm(body.expected_version)}
 
+    @app.get("/api/jobs")
+    def list_jobs():
+        return {"jobs": jobs.list()}
+
+    @app.post("/api/jobs/analyze")
+    def analyze_job(body: AnalyzeJobRequest):
+        if not body.raw_jd.strip():
+            raise HTTPException(status_code=422, detail="JD cannot be blank")
+        trace = RunTrace(db, settings, "job_analysis_workflow", "job-analysis-v1")
+        state = trace.execute(
+            build_job_graph(trace, profiles, jobs, router), {"raw_jd": body.raw_jd}
+        )
+        return {"job": jobs.get(state["job_id"]), "run_id": trace.run_id}
+
+    @app.get("/api/jobs/{job_id}")
+    def get_job(job_id: str):
+        job = jobs.get(job_id)
+        if job is None:
+            raise HTTPException(status_code=404, detail="Job not found")
+        return {"job": job}
+
+    @app.delete("/api/jobs/{job_id}")
+    def delete_job(job_id: str):
+        if not jobs.delete(job_id):
+            raise HTTPException(status_code=404, detail="Job not found")
+        return {"deleted": True}
+
     debug_deps = [Depends(development_only)]
 
     @app.get("/debug/runs", dependencies=debug_deps, include_in_schema=False)
@@ -165,6 +201,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def replay_node(body: ReplayRequest):
         # Forced replay: independent execution without business or trace writes.
         tasks = {
+            "jd-extract-v1": ("judge_model", JobExtraction),
+            "matching-v1": ("generation_model", Matching),
             "diagnostic": ("judge_model", DiagnosticResult),
             "profile-facts-v1": ("judge_model", ProfileFacts),
             "profile-normalize-v1": ("generation_model", NormalizedProfile),

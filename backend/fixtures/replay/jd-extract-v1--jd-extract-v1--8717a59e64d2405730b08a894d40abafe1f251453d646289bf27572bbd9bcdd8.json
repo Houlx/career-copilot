@@ -1,0 +1,15 @@
+{
+  "task": "jd-extract-v1",
+  "prompt_version": "jd-extract-v1",
+  "output": {
+    "title": "Synthetic role 6",
+    "requirements": [
+      {
+        "text": "身体健康",
+        "category": "personal_trait",
+        "importance": "required",
+        "scoreability": "NON_SCORABLE"
+      }
+    ]
+  }
+}

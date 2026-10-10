@@ -1,0 +1,15 @@
+{
+  "task": "jd-extract-v1",
+  "prompt_version": "jd-extract-v1",
+  "output": {
+    "title": "Synthetic role 3",
+    "requirements": [
+      {
+        "text": "本科及以上学历",
+        "category": "education",
+        "importance": "required",
+        "scoreability": "SCORED"
+      }
+    ]
+  }
+}

@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from ..config import ModelConfig, Settings
 from ..errors import CopilotError, ErrorCode
+from .jobs import JobExtraction, Matching, fake_matching
 from .profile import NormalizedProfile, ProfileFacts
 from .prompts import PROMPTS, DiagnosticResult, PromptSpec
 
@@ -102,6 +103,39 @@ class RoleModel:
                             for i, f in enumerate(facts.facts)
                         ]
                     }
+                elif task == "jd-extract-v1" and schema is JobExtraction:
+                    # Synthetic output, not an extraction quality simulator.
+                    value = {
+                        "title": "Synthetic demo job",
+                        "requirements": [
+                            {
+                                "text": "Python",
+                                "importance": "required",
+                                "category": "skill",
+                                "scoreability": "SCORED",
+                            },
+                            {
+                                "text": "SQL",
+                                "importance": "preferred",
+                                "category": "skill",
+                                "scoreability": "SCORED",
+                            },
+                            {
+                                "text": "接受出差",
+                                "importance": "required",
+                                "category": "logistics",
+                                "scoreability": "NEEDS_CONFIRMATION",
+                            },
+                            {
+                                "text": "身体健康",
+                                "importance": "required",
+                                "category": "personal_trait",
+                                "scoreability": "NON_SCORABLE",
+                            },
+                        ],
+                    }
+                elif task == "matching-v1" and schema is Matching:
+                    value = fake_matching(payload)
                 else:
                     raise CopilotError(ErrorCode.MODEL_OUTPUT_INVALID)
                 output = schema.model_validate(value)

@@ -1,0 +1,14 @@
+{
+  "task": "matching-v1",
+  "prompt_version": "matching-v1",
+  "output": {
+    "matches": [
+      {
+        "requirement_index": 0,
+        "status": "GAP",
+        "evidence_ids": [],
+        "reason": "Reviewed synthetic reference."
+      }
+    ]
+  }
+}

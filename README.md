@@ -1,6 +1,6 @@
 # Career Copilot
 
-独立的、面向个人求职的 Workflow-first AI 应用。当前完成 **Phase 2：Career Profile**。没有复制或读取 Waku 项目代码；岗位分析和简历生成留待后续阶段。
+独立的、面向个人求职的 Workflow-first AI 应用。当前完成 **Phase 3：Job Analysis**。没有复制或读取 Waku 项目代码；简历生成留待 Phase 4。
 
 ## 本地启动
 
@@ -24,9 +24,13 @@ npm --prefix frontend run dev
 
 打开 http://127.0.0.1:5173/profile 。粘贴原始职业资料，保存后明确点击“AI 整理”，查看或编辑结果并保存，最后点击“确认职业资料”。刷新后资料与 Evidence 仍然存在。概览显示 Profile 状态与版本；诊断入口继续可用。Debug Runs 页面：http://127.0.0.1:5173/debug/runs 。Settings 页面展示脱敏后的服务配置；修改 `.env` 后重启后端生效。
 
+确认资料后打开 `/jobs`，粘贴 JD 并明确点击“分析岗位”。报告可展开 Evidence，显示 Python 计算的岗位要求覆盖度；修改 Profile 后旧报告标记 outdated。fake 使用明确标识的 synthetic 岗位要求，仅验证流程。
+
 默认 `AI_MODE=fake`，dummy workflow 在任何模式下都不调用模型。SQLite 自动创建于 `data/career-copilot.sqlite3`，不进入 Git。
 
 ## 已实现
+
+- Jobs 输入、历史、详情；八节点固定 Job Analysis 图，全部 active Evidence 匹配、严格引用校验、Python Coverage、原子保存和 outdated。
 
 - React + TypeScript + Vite：Profile 输入、整理、编辑、确认、失败反馈；概览、Settings、Debug Runs。
 - 原始资料历史、AI 原始版本、用户版本分开保存；显式确认事务生成稳定 Evidence ID，版本检查拒绝旧请求覆盖。
@@ -45,7 +49,7 @@ backend/
   career_copilot/
     api.py                  # HTTP、配置展示、debug、错误响应
     config.py               # 环境配置与角色配置
-    database.py             # SQLite schema v2：runs / nodes / profile / evidence
+    database.py             # SQLite schema v3：runs / nodes / profile / evidence / jobs
     errors.py               # 明确错误分类
     tracing.py              # run、节点追踪、摘要 diff、脱敏
     models/
@@ -65,7 +69,7 @@ frontend/
   src/                      # React shell、API 类型、交互测试、样式
   vite.config.ts            # /api 本地代理；不需要 CORS
   package-lock.json
-docs/                      # 架构、Phase 1/2 设计、HANDOFF
+docs/                      # 架构、Phase 1/2/3 设计、HANDOFF
 pyproject.toml
 uv.lock
 .env.example
@@ -81,6 +85,10 @@ uv.lock
 | POST | `/api/profile/normalize` | expected_version → run_id + draft |
 | PUT | `/api/profile` | expected_version + profile.entries → user edited draft |
 | POST | `/api/profile/confirm` | expected_version → confirmed Profile + Evidence |
+| GET | `/api/jobs` | 历史报告及 outdated |
+| POST | `/api/jobs/analyze` | raw_jd → job + run_id，要求当前 Profile 已确认 |
+| GET | `/api/jobs/{job_id}` | 完整报告和 Evidence |
+| DELETE | `/api/jobs/{job_id}` | 删除报告、要求与匹配 |
 | GET | `/api/settings` | 安全的只读配置摘要 |
 | POST | `/api/workflows/dummy` | `{"message":"Career Copilot"}` → run_id + state |
 | GET | `/api/debug/runs?limit=50&offset=0` | 最近运行、耗时、tokens、model |
@@ -101,7 +109,7 @@ curl -sS http://127.0.0.1:8000/api/workflows/dummy \
 uv run python scripts/check_http.py
 ```
 
-该命令通过 Vite proxy 执行 dummy graph 并检查 SQLite trace、state diff 与独立 replay。加 `--profile` 可测试完整 Profile 流程，要求服务连接空的临时数据库；会写入 synthetic Profile/Evidence。两者均要求 fake 模式，0 live API calls。
+该命令通过 Vite proxy 执行 dummy graph 并检查 SQLite trace、state diff 与独立 replay。加 `--profile` 可测试完整 Profile 流程，要求服务连接空的临时数据库；会写入 synthetic Profile/Evidence。加 `--jobs` 包含 Profile 流程并验证 Jobs、Coverage、Evidence、trace、replay 和 outdated，同样要求空临时数据库。所有模式均要求 fake，0 live API calls。
 
 ## 配置与成本边界
 
@@ -142,6 +150,8 @@ uv run python scripts/eval_profile.py --predictions /path/to/predictions.json
 
 10 个 synthetic reviewed cases 覆盖教育、工作、项目、技能、数字、中英混合、缺失信息及模糊表述。默认 replay 对比是回归验证，不代表 live 模型质量。事实完整性仍需用户审阅；数值、source quote 和引用校验不能证明所有语义均有来源。详细规则见 [docs/PHASE_2.md](docs/PHASE_2.md)。
 
+Phase 3 新增 Judge `jd-extract-v1` 与 Generation `matching-v1`（各 6000 output tokens、temperature=0），均支持独立 offline replay。`uv run python scripts/eval_jobs.py` 运行 12 个抽取、8 个 scoreability、5 个 matching reviewed synthetic fixtures；可传 `--predictions`。规则、Coverage 公式、trace、已知限制见 [docs/PHASE_3.md](docs/PHASE_3.md)。
+
 ## 检查
 
 ```bash
@@ -152,6 +162,8 @@ npm --prefix frontend run check
 npm --prefix frontend test
 npm --prefix frontend run build
 npm --prefix frontend audit
+uv run python scripts/eval_profile.py
+uv run python scripts/eval_jobs.py
 ```
 
 pytest 默认禁用 TCP socket，仅允许 TestClient 所需 Unix socket。Provider contract 测试使用 `httpx.MockTransport`，不会访问真实 Provider。前端测试使用模拟 fetch。普通测试 **0 live API calls**。

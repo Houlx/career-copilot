@@ -1,0 +1,182 @@
+[
+  {
+    "id": "jd-01",
+    "raw_jd": "Synthetic role 1。要求：Python。",
+    "expected": {
+      "title": "Synthetic role 1",
+      "requirements": [
+        {
+          "text": "Python",
+          "category": "skill",
+          "importance": "required",
+          "scoreability": "SCORED"
+        }
+      ]
+    }
+  },
+  {
+    "id": "jd-02",
+    "raw_jd": "Synthetic role 2。要求：SQL，优先。",
+    "expected": {
+      "title": "Synthetic role 2",
+      "requirements": [
+        {
+          "text": "SQL",
+          "category": "skill",
+          "importance": "preferred",
+          "scoreability": "SCORED"
+        }
+      ]
+    }
+  },
+  {
+    "id": "jd-03",
+    "raw_jd": "Synthetic role 3。要求：本科及以上学历。",
+    "expected": {
+      "title": "Synthetic role 3",
+      "requirements": [
+        {
+          "text": "本科及以上学历",
+          "category": "education",
+          "importance": "required",
+          "scoreability": "SCORED"
+        }
+      ]
+    }
+  },
+  {
+    "id": "jd-04",
+    "raw_jd": "Synthetic role 4。要求：三年以上开发经验。",
+    "expected": {
+      "title": "Synthetic role 4",
+      "requirements": [
+        {
+          "text": "三年以上开发经验",
+          "category": "experience",
+          "importance": "required",
+          "scoreability": "SCORED"
+        }
+      ]
+    }
+  },
+  {
+    "id": "jd-05",
+    "raw_jd": "Synthetic role 5。要求：英语读写能力。",
+    "expected": {
+      "title": "Synthetic role 5",
+      "requirements": [
+        {
+          "text": "英语读写能力",
+          "category": "language",
+          "importance": "required",
+          "scoreability": "SCORED"
+        }
+      ]
+    }
+  },
+  {
+    "id": "jd-06",
+    "raw_jd": "Synthetic role 6。要求：身体健康。",
+    "expected": {
+      "title": "Synthetic role 6",
+      "requirements": [
+        {
+          "text": "身体健康",
+          "category": "personal_trait",
+          "importance": "required",
+          "scoreability": "NON_SCORABLE"
+        }
+      ]
+    }
+  },
+  {
+    "id": "jd-07",
+    "raw_jd": "Synthetic role 7。要求：责任心强。",
+    "expected": {
+      "title": "Synthetic role 7",
+      "requirements": [
+        {
+          "text": "责任心强",
+          "category": "personal_trait",
+          "importance": "required",
+          "scoreability": "NON_SCORABLE"
+        }
+      ]
+    }
+  },
+  {
+    "id": "jd-08",
+    "raw_jd": "Synthetic role 8。要求：Python 或 Java。",
+    "expected": {
+      "title": "Synthetic role 8",
+      "requirements": [
+        {
+          "text": "Python 或 Java",
+          "category": "skill",
+          "importance": "required",
+          "scoreability": "SCORED"
+        }
+      ]
+    }
+  },
+  {
+    "id": "jd-09",
+    "raw_jd": "Synthetic role 9。要求：硕士优先，本科需三年经验。",
+    "expected": {
+      "title": "Synthetic role 9",
+      "requirements": [
+        {
+          "text": "硕士优先，本科需三年经验",
+          "category": "education",
+          "importance": "required",
+          "scoreability": "SCORED"
+        }
+      ]
+    }
+  },
+  {
+    "id": "jd-10",
+    "raw_jd": "Synthetic role 10。要求：接受出差。",
+    "expected": {
+      "title": "Synthetic role 10",
+      "requirements": [
+        {
+          "text": "接受出差",
+          "category": "logistics",
+          "importance": "required",
+          "scoreability": "NEEDS_CONFIRMATION"
+        }
+      ]
+    }
+  },
+  {
+    "id": "jd-11",
+    "raw_jd": "Synthetic role 11。要求：PMP 证书。",
+    "expected": {
+      "title": "Synthetic role 11",
+      "requirements": [
+        {
+          "text": "PMP 证书",
+          "category": "certification",
+          "importance": "required",
+          "scoreability": "SCORED"
+        }
+      ]
+    }
+  },
+  {
+    "id": "jd-12",
+    "raw_jd": "Synthetic role 12。要求：与产品、测试、算法团队协作交付。",
+    "expected": {
+      "title": "Synthetic role 12",
+      "requirements": [
+        {
+          "text": "与产品、测试、算法团队协作交付",
+          "category": "capability",
+          "importance": "required",
+          "scoreability": "SCORED"
+        }
+      ]
+    }
+  }
+]
