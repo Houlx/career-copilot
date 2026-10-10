@@ -1,0 +1,51 @@
+{
+  "success": false,
+  "results": [
+    {
+      "case_id": "resume-01",
+      "passed": false,
+      "error_code": "MODEL_REQUEST_FAILED",
+      "request_success": false,
+      "schema_mapping_success": false,
+      "live_api_calls": 1,
+      "calls": [
+        {
+          "model_role": "generation",
+          "provider": "openai-compatible",
+          "model_name": "glm-5.3-flash",
+          "prompt_version": "resume-generation-v1",
+          "temperature": 0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "latency_ms": 30084.153,
+          "retry_count": 0,
+          "structured_output_mode": "json_object",
+          "provider_metadata": {
+            "error_kind": "ReadTimeout"
+          }
+        }
+      ]
+    }
+  ],
+  "calls": [
+    {
+      "model_role": "generation",
+      "provider": "openai-compatible",
+      "model_name": "glm-5.3-flash",
+      "prompt_version": "resume-generation-v1",
+      "temperature": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_tokens": 0,
+      "latency_ms": 30084.153,
+      "retry_count": 0,
+      "structured_output_mode": "json_object",
+      "provider_metadata": {
+        "error_kind": "ReadTimeout"
+      }
+    }
+  ],
+  "live_api_calls": 1,
+  "retry_count": 0
+}

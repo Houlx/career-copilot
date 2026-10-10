@@ -69,7 +69,14 @@ CREATE TABLE IF NOT EXISTS job_matches (
  PRIMARY KEY(job_id,requirement_id),
  FOREIGN KEY(job_id,requirement_id) REFERENCES job_requirements(job_id,id) ON DELETE CASCADE
 );
-PRAGMA user_version = 3;
+CREATE TABLE IF NOT EXISTS resumes (
+ id TEXT PRIMARY KEY, job_id TEXT NOT NULL,
+ profile_version INTEGER NOT NULL, language TEXT NOT NULL CHECK(language IN ('zh','en','ja')),
+ status TEXT NOT NULL CHECK(status='completed'), structured_resume_json TEXT NOT NULL,
+ markdown TEXT NOT NULL, evidence_json TEXT NOT NULL, created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS resumes_job ON resumes(job_id,created_at DESC);
+PRAGMA user_version = 4;
 """
 
 
@@ -91,7 +98,7 @@ class Database:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as conn:
             conn.execute("PRAGMA journal_mode = WAL")
-            if conn.execute("PRAGMA user_version").fetchone()[0] > 3:
+            if conn.execute("PRAGMA user_version").fetchone()[0] > 4:
                 raise CopilotError(ErrorCode.PERSISTENCE_FAILED)
             conn.executescript(SCHEMA)
 

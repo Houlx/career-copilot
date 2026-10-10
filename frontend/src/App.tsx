@@ -1,3 +1,5 @@
+import { resumeReplay } from './resumeReplay';
+import { ResumeDetail } from './Resumes';
 import { useEffect, useState } from 'react';
 import { JobDetail, JobHistory, JobsPage } from './Jobs';
 import { ProfilePage, ProfileSummary } from './Profile';
@@ -7,7 +9,7 @@ const navigation = [
   ['/', '概览', '◈'],
   ['/profile', '职业资料', '○'],
   ['/jobs', '岗位分析', '▤'],
-  ['/resume', '简历', '▧'],
+
   ['/settings', '设置', '⚙'],
 ];
 
@@ -38,7 +40,7 @@ function Dashboard({ go, debugEnabled }: { go: (path: string) => void; debugEnab
       <h1>让每一步，都有依据。</h1>
       <p className="lead">从真实职业经历出发，理解岗位要求，准备属于你的下一步。</p>
       <div className="hero-note">
-        <span className="dot" /> Phase 3 · Job Analysis 已就绪
+        <span className="dot" /> Phase 4 · Resume Generation 已就绪
       </div>
       <ProfileSummary />
       <JobHistory go={go} compact />
@@ -52,9 +54,7 @@ function Dashboard({ go, debugEnabled }: { go: (path: string) => void; debugEnab
             <span className="step-number">{n}</span>
             <h2>{title}</h2>
             <p>{text}</p>
-            <span className="tag">
-              {phase} · {phase !== 'Phase 4' ? '已开放' : '尚未实现'}
-            </span>
+            <span className="tag">{phase} · 已开放</span>
           </article>
         ))}
       </div>
@@ -203,35 +203,37 @@ function DebugRuns({ path, go }: { path: string; go: (path: string) => void }) {
         source_quote: '使用 Python。',
       };
       const payload =
-        replayTask === 'jd-extract-v1' || replayTask === 'jd-requirements-v2'
-          ? { raw_jd: 'Synthetic Python developer. Python required.' }
-          : replayTask === 'scoreability-v1'
-            ? { requirements: [{ text: 'Python', importance: 'required', category: 'skill' }] }
-            : replayTask === 'matching-v1'
-              ? {
-                  requirements: [
-                    {
-                      requirement_index: 0,
-                      text: 'Python',
-                      importance: 'required',
-                      category: 'skill',
-                      scoreability: 'SCORED',
-                    },
-                  ],
-                  evidence: [
-                    {
-                      id: 'synthetic-python',
-                      type: 'skill',
-                      title: 'Python',
-                      normalized_content: 'Python',
-                    },
-                  ],
-                }
-              : replayTask === 'profile-facts-v1'
-                ? { raw_input: '使用 Python。' }
-                : replayTask === 'profile-normalize-v1'
-                  ? { facts: [fact] }
-                  : {};
+        replayTask === 'resume-generation-v1'
+          ? resumeReplay
+          : replayTask === 'jd-extract-v1' || replayTask === 'jd-requirements-v2'
+            ? { raw_jd: 'Synthetic Python developer. Python required.' }
+            : replayTask === 'scoreability-v1'
+              ? { requirements: [{ text: 'Python', importance: 'required', category: 'skill' }] }
+              : replayTask === 'matching-v1'
+                ? {
+                    requirements: [
+                      {
+                        requirement_index: 0,
+                        text: 'Python',
+                        importance: 'required',
+                        category: 'skill',
+                        scoreability: 'SCORED',
+                      },
+                    ],
+                    evidence: [
+                      {
+                        id: 'synthetic-python',
+                        type: 'skill',
+                        title: 'Python',
+                        normalized_content: 'Python',
+                      },
+                    ],
+                  }
+                : replayTask === 'profile-facts-v1'
+                  ? { raw_input: '使用 Python。' }
+                  : replayTask === 'profile-normalize-v1'
+                    ? { facts: [fact] }
+                    : {};
       setReplay(await api('/debug/replay', { task: replayTask, payload }));
     } catch (e) {
       setError(String(e));
@@ -378,6 +380,7 @@ function DebugRuns({ path, go }: { path: string; go: (path: string) => void }) {
             <option value="scoreability-v1">scoreability-v1</option>
             <option value="jd-extract-v1">jd-extract-v1</option>
             <option value="matching-v1">matching-v1</option>
+            <option value="resume-generation-v1">resume-generation-v1</option>
             <option value="profile-facts-v1">profile-facts-v1</option>
             <option value="profile-normalize-v1">profile-normalize-v1</option>
           </select>
@@ -445,7 +448,7 @@ export default function App() {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <span className="dot" /> 本地个人工作空间<small>Phase 3 · v0.3.0</small>
+          <span className="dot" /> 本地个人工作空间<small>Phase 4 · v0.4.0</small>
         </div>
       </aside>
       <div className="workspace">
@@ -473,6 +476,8 @@ export default function App() {
             <JobsPage go={go} fakeMode={settings.ai_mode === 'fake'} />
           ) : path.startsWith('/jobs/') ? (
             <JobDetail id={path.slice(6)} go={go} debugEnabled={settings.debug_enabled} />
+          ) : path.startsWith('/resumes/') ? (
+            <ResumeDetail key={path} id={path.slice(9)} go={go} />
           ) : path === '/settings' ? (
             <SettingsPage settings={settings} />
           ) : path.startsWith('/debug/runs') && settings.debug_enabled ? (

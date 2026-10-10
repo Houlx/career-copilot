@@ -347,7 +347,7 @@ def test_v2_upgrade_keeps_profile(client):
     db.initialize()
     assert client.get("/api/profile").json()["profile"] == profile
     with db.connect() as conn:
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 4
 
 
 @pytest.mark.parametrize("jd", ["", "   ", "x" * 30001])

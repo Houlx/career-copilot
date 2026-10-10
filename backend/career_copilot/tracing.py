@@ -97,6 +97,9 @@ class RunTrace:
                     state_changes=state_diff(state, updates),
                     validation_result={"status": "passed", "check": "node_output_is_mapping"},
                 )
+                for key in ("validation_metrics", "language_validation"):
+                    if key in updates:
+                        trace["validation_result"].update(updates[key])
                 if self.settings.payloads_enabled:
                     trace["debug_payload"] = {
                         "input": state,

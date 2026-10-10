@@ -1,0 +1,63 @@
+{
+  "task": "resume-generation-v1",
+  "prompt_version": "resume-generation-v1",
+  "output": {
+    "language": "ja",
+    "headline": {
+      "text": "Python engineer",
+      "evidence_ids": [
+        "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    },
+    "summary": [
+      {
+        "text": "Built Python 3.12 services and a React prototype.",
+        "evidence_ids": [
+          "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        ]
+      }
+    ],
+    "sections": [
+      {
+        "kind": "skills",
+        "items": [
+          {
+            "text": "Python 3.12",
+            "evidence_ids": [
+              "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ]
+          },
+          {
+            "text": "React",
+            "evidence_ids": [
+              "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "experience",
+        "items": [
+          {
+            "text": "Worked as a Python engineer at Synthetic Studio from 2022 to 2024. Built Python 3.12 services and reduced latency by 20%.",
+            "evidence_ids": [
+              "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "projects",
+        "items": [
+          {
+            "text": "Built a React prototype for an internal tool.",
+            "evidence_ids": [
+              "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

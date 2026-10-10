@@ -1,0 +1,788 @@
+[
+  {
+    "id": "resume-01",
+    "review": "Synthetic supported baseline; MATCH Python, PARTIAL React without TypeScript, GAP Kubernetes omitted.",
+    "payload": {
+      "job": {
+        "title": "Synthetic application engineer",
+        "raw_jd": "Python required. React and TypeScript preferred. Kubernetes required.",
+        "coverage": 50.0
+      },
+      "requirements": [
+        {
+          "id": "req-001",
+          "text": "Python",
+          "importance": "required",
+          "category": "skill",
+          "scoreability": "SCORED"
+        },
+        {
+          "id": "req-002",
+          "text": "React and TypeScript",
+          "importance": "preferred",
+          "category": "skill",
+          "scoreability": "SCORED"
+        },
+        {
+          "id": "req-003",
+          "text": "Kubernetes",
+          "importance": "required",
+          "category": "skill",
+          "scoreability": "SCORED"
+        }
+      ],
+      "matches": [
+        {
+          "requirement_id": "req-001",
+          "status": "MATCH",
+          "evidence_ids": [
+            "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          ],
+          "explanation": "Python services supported."
+        },
+        {
+          "requirement_id": "req-002",
+          "status": "PARTIAL",
+          "evidence_ids": [
+            "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          ],
+          "explanation": "React prototype only; no TypeScript evidence."
+        },
+        {
+          "requirement_id": "req-003",
+          "status": "GAP",
+          "evidence_ids": [],
+          "explanation": "No Kubernetes evidence."
+        }
+      ],
+      "evidence": [
+        {
+          "id": "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "type": "work",
+          "title": "Synthetic Python engineer",
+          "normalized_content": "Worked as a Python engineer at Synthetic Studio from 2022 to 2024. Built Python 3.12 services and reduced latency by 20%."
+        },
+        {
+          "id": "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "type": "project",
+          "title": "Synthetic React prototype",
+          "normalized_content": "Built a React prototype for an internal tool."
+        }
+      ],
+      "requested_language": "en"
+    },
+    "expected": {
+      "language": "en",
+      "headline": {
+        "text": "Python engineer",
+        "evidence_ids": [
+          "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ]
+      },
+      "summary": [
+        {
+          "text": "Built Python 3.12 services and a React prototype.",
+          "evidence_ids": [
+            "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          ]
+        }
+      ],
+      "sections": [
+        {
+          "kind": "skills",
+          "items": [
+            {
+              "text": "Python 3.12",
+              "evidence_ids": [
+                "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ]
+            },
+            {
+              "text": "React",
+              "evidence_ids": [
+                "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "experience",
+          "items": [
+            {
+              "text": "Worked as a Python engineer at Synthetic Studio from 2022 to 2024. Built Python 3.12 services and reduced latency by 20%.",
+              "evidence_ids": [
+                "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "projects",
+          "items": [
+            {
+              "text": "Built a React prototype for an internal tool.",
+              "evidence_ids": [
+                "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "expected_error": null
+  },
+  {
+    "id": "resume-02",
+    "review": "Reject invented but well-formed Evidence reference.",
+    "payload": {
+      "job": {
+        "title": "resume-02 synthetic role",
+        "raw_jd": "Python required. React and TypeScript preferred. Kubernetes required.",
+        "coverage": 50.0
+      },
+      "requirements": [
+        {
+          "id": "req-001",
+          "text": "Python",
+          "importance": "required",
+          "category": "skill",
+          "scoreability": "SCORED"
+        },
+        {
+          "id": "req-002",
+          "text": "React and TypeScript",
+          "importance": "preferred",
+          "category": "skill",
+          "scoreability": "SCORED"
+        },
+        {
+          "id": "req-003",
+          "text": "Kubernetes",
+          "importance": "required",
+          "category": "skill",
+          "scoreability": "SCORED"
+        }
+      ],
+      "matches": [
+        {
+          "requirement_id": "req-001",
+          "status": "MATCH",
+          "evidence_ids": [
+            "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          ],
+          "explanation": "Python services supported."
+        },
+        {
+          "requirement_id": "req-002",
+          "status": "PARTIAL",
+          "evidence_ids": [
+            "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          ],
+          "explanation": "React prototype only; no TypeScript evidence."
+        },
+        {
+          "requirement_id": "req-003",
+          "status": "GAP",
+          "evidence_ids": [],
+          "explanation": "No Kubernetes evidence."
+        }
+      ],
+      "evidence": [
+        {
+          "id": "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "type": "work",
+          "title": "Synthetic Python engineer",
+          "normalized_content": "Worked as a Python engineer at Synthetic Studio from 2022 to 2024. Built Python 3.12 services and reduced latency by 20%."
+        },
+        {
+          "id": "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "type": "project",
+          "title": "Synthetic React prototype",
+          "normalized_content": "Built a React prototype for an internal tool."
+        }
+      ],
+      "requested_language": "en"
+    },
+    "expected": {
+      "language": "en",
+      "headline": {
+        "text": "Python engineer",
+        "evidence_ids": [
+          "career-work-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        ]
+      },
+      "summary": [
+        {
+          "text": "Built Python 3.12 services and a React prototype.",
+          "evidence_ids": [
+            "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          ]
+        }
+      ],
+      "sections": [
+        {
+          "kind": "skills",
+          "items": [
+            {
+              "text": "Python 3.12",
+              "evidence_ids": [
+                "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ]
+            },
+            {
+              "text": "React",
+              "evidence_ids": [
+                "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "experience",
+          "items": [
+            {
+              "text": "Worked as a Python engineer at Synthetic Studio from 2022 to 2024. Built Python 3.12 services and reduced latency by 20%.",
+              "evidence_ids": [
+                "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "projects",
+          "items": [
+            {
+              "text": "Built a React prototype for an internal tool.",
+              "evidence_ids": [
+                "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "expected_error": "RESUME_GROUNDING_FAILED"
+  },
+  {
+    "id": "resume-03",
+    "review": "Reject a factual summary with zero references.",
+    "payload": {
+      "job": {
+        "title": "resume-03 synthetic role",
+        "raw_jd": "Python required. React and TypeScript preferred. Kubernetes required.",
+        "coverage": 50.0
+      },
+      "requirements": [
+        {
+          "id": "req-001",
+          "text": "Python",
+          "importance": "required",
+          "category": "skill",
+          "scoreability": "SCORED"
+        },
+        {
+          "id": "req-002",
+          "text": "React and TypeScript",
+          "importance": "preferred",
+          "category": "skill",
+          "scoreability": "SCORED"
+        },
+        {
+          "id": "req-003",
+          "text": "Kubernetes",
+          "importance": "required",
+          "category": "skill",
+          "scoreability": "SCORED"
+        }
+      ],
+      "matches": [
+        {
+          "requirement_id": "req-001",
+          "status": "MATCH",
+          "evidence_ids": [
+            "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          ],
+          "explanation": "Python services supported."
+        },
+        {
+          "requirement_id": "req-002",
+          "status": "PARTIAL",
+          "evidence_ids": [
+            "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          ],
+          "explanation": "React prototype only; no TypeScript evidence."
+        },
+        {
+          "requirement_id": "req-003",
+          "status": "GAP",
+          "evidence_ids": [],
+          "explanation": "No Kubernetes evidence."
+        }
+      ],
+      "evidence": [
+        {
+          "id": "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "type": "work",
+          "title": "Synthetic Python engineer",
+          "normalized_content": "Worked as a Python engineer at Synthetic Studio from 2022 to 2024. Built Python 3.12 services and reduced latency by 20%."
+        },
+        {
+          "id": "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "type": "project",
+          "title": "Synthetic React prototype",
+          "normalized_content": "Built a React prototype for an internal tool."
+        }
+      ],
+      "requested_language": "en"
+    },
+    "expected": {
+      "language": "en",
+      "headline": {
+        "text": "Python engineer",
+        "evidence_ids": [
+          "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ]
+      },
+      "summary": [
+        {
+          "text": "Built Python 3.12 services and a React prototype.",
+          "evidence_ids": []
+        }
+      ],
+      "sections": [
+        {
+          "kind": "skills",
+          "items": [
+            {
+              "text": "Python 3.12",
+              "evidence_ids": [
+                "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ]
+            },
+            {
+              "text": "React",
+              "evidence_ids": [
+                "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "experience",
+          "items": [
+            {
+              "text": "Worked as a Python engineer at Synthetic Studio from 2022 to 2024. Built Python 3.12 services and reduced latency by 20%.",
+              "evidence_ids": [
+                "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "projects",
+          "items": [
+            {
+              "text": "Built a React prototype for an internal tool.",
+              "evidence_ids": [
+                "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "expected_error": "MODEL_OUTPUT_INVALID"
+  },
+  {
+    "id": "resume-04",
+    "review": "Reject unsupported numeric performance claim.",
+    "payload": {
+      "job": {
+        "title": "resume-04 synthetic role",
+        "raw_jd": "Python required. React and TypeScript preferred. Kubernetes required.",
+        "coverage": 50.0
+      },
+      "requirements": [
+        {
+          "id": "req-001",
+          "text": "Python",
+          "importance": "required",
+          "category": "skill",
+          "scoreability": "SCORED"
+        },
+        {
+          "id": "req-002",
+          "text": "React and TypeScript",
+          "importance": "preferred",
+          "category": "skill",
+          "scoreability": "SCORED"
+        },
+        {
+          "id": "req-003",
+          "text": "Kubernetes",
+          "importance": "required",
+          "category": "skill",
+          "scoreability": "SCORED"
+        }
+      ],
+      "matches": [
+        {
+          "requirement_id": "req-001",
+          "status": "MATCH",
+          "evidence_ids": [
+            "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          ],
+          "explanation": "Python services supported."
+        },
+        {
+          "requirement_id": "req-002",
+          "status": "PARTIAL",
+          "evidence_ids": [
+            "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          ],
+          "explanation": "React prototype only; no TypeScript evidence."
+        },
+        {
+          "requirement_id": "req-003",
+          "status": "GAP",
+          "evidence_ids": [],
+          "explanation": "No Kubernetes evidence."
+        }
+      ],
+      "evidence": [
+        {
+          "id": "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "type": "work",
+          "title": "Synthetic Python engineer",
+          "normalized_content": "Worked as a Python engineer at Synthetic Studio from 2022 to 2024. Built Python 3.12 services and reduced latency by 20%."
+        },
+        {
+          "id": "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "type": "project",
+          "title": "Synthetic React prototype",
+          "normalized_content": "Built a React prototype for an internal tool."
+        }
+      ],
+      "requested_language": "en"
+    },
+    "expected": {
+      "language": "en",
+      "headline": {
+        "text": "Python engineer",
+        "evidence_ids": [
+          "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ]
+      },
+      "summary": [
+        {
+          "text": "Built Python 3.12 services and a React prototype.",
+          "evidence_ids": [
+            "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          ]
+        }
+      ],
+      "sections": [
+        {
+          "kind": "skills",
+          "items": [
+            {
+              "text": "Python 3.12",
+              "evidence_ids": [
+                "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ]
+            },
+            {
+              "text": "React",
+              "evidence_ids": [
+                "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "experience",
+          "items": [
+            {
+              "text": "Reduced latency by 99%.",
+              "evidence_ids": [
+                "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "projects",
+          "items": [
+            {
+              "text": "Built a React prototype for an internal tool.",
+              "evidence_ids": [
+                "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "expected_error": "RESUME_GROUNDING_FAILED"
+  },
+  {
+    "id": "resume-05",
+    "review": "Reject valid language enum that differs from requested language.",
+    "payload": {
+      "job": {
+        "title": "resume-05 synthetic role",
+        "raw_jd": "Python required. React and TypeScript preferred. Kubernetes required.",
+        "coverage": 50.0
+      },
+      "requirements": [
+        {
+          "id": "req-001",
+          "text": "Python",
+          "importance": "required",
+          "category": "skill",
+          "scoreability": "SCORED"
+        },
+        {
+          "id": "req-002",
+          "text": "React and TypeScript",
+          "importance": "preferred",
+          "category": "skill",
+          "scoreability": "SCORED"
+        },
+        {
+          "id": "req-003",
+          "text": "Kubernetes",
+          "importance": "required",
+          "category": "skill",
+          "scoreability": "SCORED"
+        }
+      ],
+      "matches": [
+        {
+          "requirement_id": "req-001",
+          "status": "MATCH",
+          "evidence_ids": [
+            "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          ],
+          "explanation": "Python services supported."
+        },
+        {
+          "requirement_id": "req-002",
+          "status": "PARTIAL",
+          "evidence_ids": [
+            "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          ],
+          "explanation": "React prototype only; no TypeScript evidence."
+        },
+        {
+          "requirement_id": "req-003",
+          "status": "GAP",
+          "evidence_ids": [],
+          "explanation": "No Kubernetes evidence."
+        }
+      ],
+      "evidence": [
+        {
+          "id": "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "type": "work",
+          "title": "Synthetic Python engineer",
+          "normalized_content": "Worked as a Python engineer at Synthetic Studio from 2022 to 2024. Built Python 3.12 services and reduced latency by 20%."
+        },
+        {
+          "id": "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "type": "project",
+          "title": "Synthetic React prototype",
+          "normalized_content": "Built a React prototype for an internal tool."
+        }
+      ],
+      "requested_language": "en"
+    },
+    "expected": {
+      "language": "ja",
+      "headline": {
+        "text": "Python engineer",
+        "evidence_ids": [
+          "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ]
+      },
+      "summary": [
+        {
+          "text": "Built Python 3.12 services and a React prototype.",
+          "evidence_ids": [
+            "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          ]
+        }
+      ],
+      "sections": [
+        {
+          "kind": "skills",
+          "items": [
+            {
+              "text": "Python 3.12",
+              "evidence_ids": [
+                "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ]
+            },
+            {
+              "text": "React",
+              "evidence_ids": [
+                "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "experience",
+          "items": [
+            {
+              "text": "Worked as a Python engineer at Synthetic Studio from 2022 to 2024. Built Python 3.12 services and reduced latency by 20%.",
+              "evidence_ids": [
+                "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "projects",
+          "items": [
+            {
+              "text": "Built a React prototype for an internal tool.",
+              "evidence_ids": [
+                "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "expected_error": "RESUME_VALIDATION_FAILED"
+  },
+  {
+    "id": "resume-06",
+    "review": "Reject missing required summary section.",
+    "payload": {
+      "job": {
+        "title": "resume-06 synthetic role",
+        "raw_jd": "Python required. React and TypeScript preferred. Kubernetes required.",
+        "coverage": 50.0
+      },
+      "requirements": [
+        {
+          "id": "req-001",
+          "text": "Python",
+          "importance": "required",
+          "category": "skill",
+          "scoreability": "SCORED"
+        },
+        {
+          "id": "req-002",
+          "text": "React and TypeScript",
+          "importance": "preferred",
+          "category": "skill",
+          "scoreability": "SCORED"
+        },
+        {
+          "id": "req-003",
+          "text": "Kubernetes",
+          "importance": "required",
+          "category": "skill",
+          "scoreability": "SCORED"
+        }
+      ],
+      "matches": [
+        {
+          "requirement_id": "req-001",
+          "status": "MATCH",
+          "evidence_ids": [
+            "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          ],
+          "explanation": "Python services supported."
+        },
+        {
+          "requirement_id": "req-002",
+          "status": "PARTIAL",
+          "evidence_ids": [
+            "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          ],
+          "explanation": "React prototype only; no TypeScript evidence."
+        },
+        {
+          "requirement_id": "req-003",
+          "status": "GAP",
+          "evidence_ids": [],
+          "explanation": "No Kubernetes evidence."
+        }
+      ],
+      "evidence": [
+        {
+          "id": "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "type": "work",
+          "title": "Synthetic Python engineer",
+          "normalized_content": "Worked as a Python engineer at Synthetic Studio from 2022 to 2024. Built Python 3.12 services and reduced latency by 20%."
+        },
+        {
+          "id": "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "type": "project",
+          "title": "Synthetic React prototype",
+          "normalized_content": "Built a React prototype for an internal tool."
+        }
+      ],
+      "requested_language": "en"
+    },
+    "expected": {
+      "language": "en",
+      "headline": {
+        "text": "Python engineer",
+        "evidence_ids": [
+          "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ]
+      },
+      "sections": [
+        {
+          "kind": "skills",
+          "items": [
+            {
+              "text": "Python 3.12",
+              "evidence_ids": [
+                "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ]
+            },
+            {
+              "text": "React",
+              "evidence_ids": [
+                "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "experience",
+          "items": [
+            {
+              "text": "Worked as a Python engineer at Synthetic Studio from 2022 to 2024. Built Python 3.12 services and reduced latency by 20%.",
+              "evidence_ids": [
+                "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "projects",
+          "items": [
+            {
+              "text": "Built a React prototype for an internal tool.",
+              "evidence_ids": [
+                "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "expected_error": "MODEL_OUTPUT_INVALID"
+  }
+]

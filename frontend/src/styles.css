@@ -540,3 +540,62 @@ code {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+.resume-document {
+  background: white;
+  color: #111;
+  max-width: 210mm;
+  margin: 24px auto;
+  padding: 16mm;
+  overflow-wrap: anywhere;
+}
+.resume-document h1 {
+  font-size: 26px;
+}
+.resume-document h2 {
+  font-size: 18px;
+  border-bottom: 1px solid #aaa;
+  padding-bottom: 6px;
+}
+.resume-document li {
+  margin: 8px 0;
+  white-space: pre-wrap;
+}
+@page {
+  size: A4;
+  margin: 16mm;
+}
+@media print {
+  aside,
+  header,
+  footer,
+  .resume-controls {
+    display: none !important;
+  }
+  .app,
+  .workspace,
+  main {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: auto !important;
+    background: white !important;
+  }
+  .resume-document {
+    padding: 0;
+    margin: 0;
+    max-width: none;
+    box-shadow: none;
+  }
+  .resume-document h1,
+  .resume-document h2 {
+    color: black;
+    break-after: avoid;
+  }
+  .resume-document p,
+  .resume-document li {
+    break-inside: avoid;
+    orphans: 3;
+    widows: 3;
+  }
+}

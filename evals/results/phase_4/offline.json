@@ -1,0 +1,228 @@
+{
+  "success": true,
+  "results": [
+    {
+      "case_id": "resume-01",
+      "passed": true,
+      "metrics": {
+        "resume_item_count": 6,
+        "evidence_reference_count": 7,
+        "invalid_evidence_reference_count": 0,
+        "unsupported_fact_item_count": 0,
+        "numeric_grounding_failure_count": 0,
+        "evidence_backed_item_rate": 1.0
+      },
+      "markdown_render_success": true,
+      "schema_mapping_success": true
+    },
+    {
+      "case_id": "resume-02",
+      "passed": true,
+      "error_code": "RESUME_GROUNDING_FAILED",
+      "request_success": true,
+      "schema_mapping_success": true,
+      "live_api_calls": 0,
+      "calls": [
+        {
+          "model_role": "generation",
+          "provider": "replay",
+          "model_name": "replay",
+          "prompt_version": "resume-generation-v1",
+          "temperature": 0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "latency_ms": 0.114,
+          "retry_count": 0,
+          "structured_output_mode": "json_schema"
+        }
+      ],
+      "resume_item_count": 6,
+      "evidence_reference_count": 7,
+      "invalid_evidence_reference_count": 1,
+      "unsupported_fact_item_count": 1,
+      "numeric_grounding_failure_count": 0,
+      "evidence_backed_item_rate": 0.8333333333333334
+    },
+    {
+      "case_id": "resume-03",
+      "passed": true,
+      "error_code": "MODEL_OUTPUT_INVALID",
+      "request_success": true,
+      "schema_mapping_success": false,
+      "live_api_calls": 0,
+      "calls": [
+        {
+          "model_role": "generation",
+          "provider": "replay",
+          "model_name": "replay",
+          "prompt_version": "resume-generation-v1",
+          "temperature": 0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "latency_ms": 0.1,
+          "retry_count": 0,
+          "structured_output_mode": "json_schema"
+        }
+      ]
+    },
+    {
+      "case_id": "resume-04",
+      "passed": true,
+      "error_code": "RESUME_GROUNDING_FAILED",
+      "request_success": true,
+      "schema_mapping_success": true,
+      "live_api_calls": 0,
+      "calls": [
+        {
+          "model_role": "generation",
+          "provider": "replay",
+          "model_name": "replay",
+          "prompt_version": "resume-generation-v1",
+          "temperature": 0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "latency_ms": 0.088,
+          "retry_count": 0,
+          "structured_output_mode": "json_schema"
+        }
+      ],
+      "resume_item_count": 6,
+      "evidence_reference_count": 7,
+      "invalid_evidence_reference_count": 0,
+      "unsupported_fact_item_count": 0,
+      "numeric_grounding_failure_count": 1,
+      "evidence_backed_item_rate": 1.0
+    },
+    {
+      "case_id": "resume-05",
+      "passed": true,
+      "error_code": "RESUME_VALIDATION_FAILED",
+      "request_success": true,
+      "schema_mapping_success": true,
+      "live_api_calls": 0,
+      "calls": [
+        {
+          "model_role": "generation",
+          "provider": "replay",
+          "model_name": "replay",
+          "prompt_version": "resume-generation-v1",
+          "temperature": 0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "latency_ms": 0.09,
+          "retry_count": 0,
+          "structured_output_mode": "json_schema"
+        }
+      ]
+    },
+    {
+      "case_id": "resume-06",
+      "passed": true,
+      "error_code": "MODEL_OUTPUT_INVALID",
+      "request_success": true,
+      "schema_mapping_success": false,
+      "live_api_calls": 0,
+      "calls": [
+        {
+          "model_role": "generation",
+          "provider": "replay",
+          "model_name": "replay",
+          "prompt_version": "resume-generation-v1",
+          "temperature": 0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "latency_ms": 0.109,
+          "retry_count": 0,
+          "structured_output_mode": "json_schema"
+        }
+      ]
+    }
+  ],
+  "calls": [
+    {
+      "model_role": "generation",
+      "provider": "replay",
+      "model_name": "replay",
+      "prompt_version": "resume-generation-v1",
+      "temperature": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_tokens": 0,
+      "latency_ms": 0.286,
+      "retry_count": 0,
+      "structured_output_mode": "json_schema"
+    },
+    {
+      "model_role": "generation",
+      "provider": "replay",
+      "model_name": "replay",
+      "prompt_version": "resume-generation-v1",
+      "temperature": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_tokens": 0,
+      "latency_ms": 0.114,
+      "retry_count": 0,
+      "structured_output_mode": "json_schema"
+    },
+    {
+      "model_role": "generation",
+      "provider": "replay",
+      "model_name": "replay",
+      "prompt_version": "resume-generation-v1",
+      "temperature": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_tokens": 0,
+      "latency_ms": 0.1,
+      "retry_count": 0,
+      "structured_output_mode": "json_schema"
+    },
+    {
+      "model_role": "generation",
+      "provider": "replay",
+      "model_name": "replay",
+      "prompt_version": "resume-generation-v1",
+      "temperature": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_tokens": 0,
+      "latency_ms": 0.088,
+      "retry_count": 0,
+      "structured_output_mode": "json_schema"
+    },
+    {
+      "model_role": "generation",
+      "provider": "replay",
+      "model_name": "replay",
+      "prompt_version": "resume-generation-v1",
+      "temperature": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_tokens": 0,
+      "latency_ms": 0.09,
+      "retry_count": 0,
+      "structured_output_mode": "json_schema"
+    },
+    {
+      "model_role": "generation",
+      "provider": "replay",
+      "model_name": "replay",
+      "prompt_version": "resume-generation-v1",
+      "temperature": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_tokens": 0,
+      "latency_ms": 0.109,
+      "retry_count": 0,
+      "structured_output_mode": "json_schema"
+    }
+  ],
+  "live_api_calls": 0,
+  "retry_count": 0
+}

@@ -115,3 +115,27 @@ export interface Job {
   outdated: boolean;
   requirements: JobRequirement[];
 }
+
+export type ResumeLanguage = 'zh' | 'en' | 'ja';
+export interface ResumeFact {
+  text: string;
+  evidence_ids: string[];
+}
+export interface ResumeDraft {
+  language: ResumeLanguage;
+  headline: ResumeFact;
+  summary: ResumeFact[];
+  sections: { kind: string; items: ResumeFact[] }[];
+}
+export interface Resume {
+  id: string;
+  job_id: string;
+  profile_version: number;
+  language: ResumeLanguage;
+  status: string;
+  created_at: string;
+  outdated: boolean;
+  structured_resume: ResumeDraft;
+  markdown: string;
+  evidence: JobEvidence[];
+}

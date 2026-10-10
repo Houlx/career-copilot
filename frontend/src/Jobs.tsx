@@ -1,3 +1,4 @@
+import { JobResumes } from './Resumes';
 import { useEffect, useState } from 'react';
 import { api, type Job, type ProfileResponse } from './api';
 
@@ -179,6 +180,7 @@ export function JobDetail({
             </button>
             {debugEnabled && <button onClick={() => go('/debug/runs')}>查看运行追踪</button>}
           </section>
+          <JobResumes key={job.id} job={job} go={go} />
           <section className="card">
             <h2>岗位要求</h2>
             {job.requirements.map((r) => (

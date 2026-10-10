@@ -12,12 +12,15 @@ from .job_store import JobStore
 from .models.jobs import JobExtraction, JobRequirements, Matching, ScoreabilityResult
 from .models.profile import NormalizedProfile, ProfileFacts
 from .models.prompts import PROMPTS, DiagnosticResult
+from .models.resumes import Language, ResumeDraft
 from .models.router import ModelRouter
 from .profile_store import ProfileStore
+from .resume_store import ResumeStore
 from .tracing import RunTrace
 from .workflows.dummy import build_dummy_graph
 from .workflows.jobs import build_job_graph
 from .workflows.profile import build_profile_graph
+from .workflows.resumes import build_resume_graph
 
 
 class DummyRequest(BaseModel):
@@ -28,6 +31,11 @@ class DummyRequest(BaseModel):
 class AnalyzeJobRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     raw_jd: str = Field(min_length=1, max_length=30000)
+
+
+class ResumeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    language: Language
 
 
 class ReplayRequest(BaseModel):
@@ -55,6 +63,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     router = ModelRouter(settings)
     profiles = ProfileStore(db)
     jobs = JobStore(db)
+    resumes = ResumeStore(db)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -77,18 +86,30 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             body["run_id"] = exc.run_id
         status = (
             404
-            if exc.code in {ErrorCode.REPLAY_NOT_FOUND, ErrorCode.PROFILE_NOT_FOUND}
+            if exc.code
+            in {
+                ErrorCode.REPLAY_NOT_FOUND,
+                ErrorCode.PROFILE_NOT_FOUND,
+                ErrorCode.JOB_NOT_FOUND,
+                ErrorCode.RESUME_NOT_FOUND,
+            }
             else 409
-            if exc.code == ErrorCode.PROFILE_CONFLICT
+            if exc.code
+            in {ErrorCode.PROFILE_CONFLICT, ErrorCode.JOB_OUTDATED, ErrorCode.JOB_NOT_COMPLETED}
             else 422
-            if exc.code == ErrorCode.PROFILE_VALIDATION_FAILED
+            if exc.code
+            in {
+                ErrorCode.PROFILE_VALIDATION_FAILED,
+                ErrorCode.RESUME_VALIDATION_FAILED,
+                ErrorCode.RESUME_GROUNDING_FAILED,
+            }
             else 500
         )
         return JSONResponse(status_code=status, content=body)
 
     @app.get("/api/health")
     def health():
-        return {"status": "ok", "phase": 3}
+        return {"status": "ok", "phase": 4}
 
     @app.get("/api/settings")
     def read_settings():
@@ -182,6 +203,36 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="Job not found")
         return {"deleted": True}
 
+    @app.post("/api/jobs/{job_id}/resumes")
+    def generate_resume(job_id: str, body: ResumeRequest):
+        trace = RunTrace(db, settings, "resume_generation_workflow", "resume-generation-v1")
+        state = trace.execute(
+            build_resume_graph(trace, resumes, router),
+            {"job_id": job_id, "language": body.language},
+        )
+        return {
+            "resume_id": state["resume_id"],
+            "run_id": trace.run_id,
+            "resume": resumes.get(state["resume_id"]),
+        }
+
+    @app.get("/api/jobs/{job_id}/resumes")
+    def list_resumes(job_id: str):
+        return {"resumes": resumes.list(job_id)}
+
+    @app.get("/api/resumes/{resume_id}")
+    def get_resume(resume_id: str):
+        resume = resumes.get(resume_id)
+        if not resume:
+            raise CopilotError(ErrorCode.RESUME_NOT_FOUND)
+        return {"resume": resume}
+
+    @app.delete("/api/resumes/{resume_id}")
+    def delete_resume(resume_id: str):
+        if not resumes.delete(resume_id):
+            raise CopilotError(ErrorCode.RESUME_NOT_FOUND)
+        return {"deleted": True}
+
     debug_deps = [Depends(development_only)]
 
     @app.get("/debug/runs", dependencies=debug_deps, include_in_schema=False)
@@ -206,6 +257,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def replay_node(body: ReplayRequest):
         # Forced replay: independent execution without business or trace writes.
         tasks = {
+            "resume-generation-v1": ("generation_model", ResumeDraft),
             "jd-requirements-v2": ("generation_model", JobRequirements),
             "scoreability-v1": ("judge_model", ScoreabilityResult),
             "jd-extract-v1": ("judge_model", JobExtraction),

@@ -13,14 +13,17 @@ def main():
         "--profile", action="store_true", help="Exercise Profile on an empty test DB"
     )
     parser.add_argument("--jobs", action="store_true", help="Exercise Jobs on an empty test DB")
+    parser.add_argument("--resume", action="store_true", help="Exercise Resume on an empty test DB")
     args = parser.parse_args()
+    if args.resume:
+        args.jobs = True
     with (
         httpx.Client(base_url=args.backend, timeout=10) as backend,
         httpx.Client(base_url=args.frontend, timeout=10) as frontend,
     ):
         health = backend.get("/api/health")
         health.raise_for_status()
-        assert health.json() == {"status": "ok", "phase": 3}
+        assert health.json() == {"status": "ok", "phase": 4}
         config = frontend.get("/api/settings")
         config.raise_for_status()
         assert config.json()["ai_mode"] == "fake", "Run smoke check with AI_MODE=fake"
@@ -141,6 +144,18 @@ def main():
                 )
             assert backend.get("/api/debug/runs").json() == before
             assert backend.get("/api/jobs").json()["jobs"] == [job]
+            if args.resume:
+                generated = post(f"/api/jobs/{job['id']}/resumes", {"language": "zh"})
+                resume = generated["resume"]
+                assert generated["resume_id"] == resume["id"] and not resume["outdated"]
+                assert resume["evidence"] and resume["markdown"]
+                assert backend.get(f"/api/resumes/{resume['id']}").json()["resume"] == resume
+                assert len(backend.get(f"/api/jobs/{job['id']}/resumes").json()["resumes"]) == 1
+                nodes = backend.get(f"/api/debug/runs/{generated['run_id']}").json()["nodes"]
+                assert (
+                    len(nodes) == 7 and nodes[1]["ai"]["prompt_version"] == "resume-generation-v1"
+                )
+                assert nodes[3]["validation_result"]["numeric_grounding_failure_count"] == 0
             post(
                 "/api/profile/raw",
                 {"raw_input": "Changed synthetic profile.", "expected_version": 4},
@@ -149,6 +164,20 @@ def main():
             assert (
                 frontend.post("/api/jobs/analyze", json={"raw_jd": "Synthetic"}).status_code == 422
             )
+            if args.resume:
+                historical = backend.get(f"/api/resumes/{resume['id']}").json()["resume"]
+                assert historical["outdated"] and historical["evidence"] == resume["evidence"]
+                assert (
+                    frontend.post(
+                        f"/api/jobs/{job['id']}/resumes", json={"language": "en"}
+                    ).status_code
+                    != 200
+                )
+                frontend.delete(f"/api/resumes/{resume['id']}").raise_for_status()
+                assert backend.get(f"/api/resumes/{resume['id']}").status_code == 404
+                assert backend.get(f"/api/jobs/{job['id']}").status_code == 200
+    if args.resume:
+        print("PASS: Resume generation / grounding / GET / outdated / delete; 0 live requests")
     print("PASS: HTTP → Vite proxy → FastAPI → LangGraph → SQLite → trace response")
     print("PASS: debug UI shell / node diff / standalone replay; 0 live API calls")
     if args.jobs:

@@ -2,7 +2,23 @@
 
 更新日期：2026-10-10（Asia/Shanghai）
 
-## Status
+## Current status — Phase 4
+
+**Phase 4 实现与离线回归完成；唯一一次 synthetic live ReadTimeout，已停止，live 验收未通过。** 此状态优先于下方保留的历史记录。
+
+- 七节点固定 Resume graph，Generation resume-generation-v1；不重跑 JD/scoreability/matching，Jev 不变。
+- SQLite v4 resumes，结构/Markdown/引用 Evidence 快照原子保存，门禁和事务内版本复查；历史 outdated/list/detail/delete。
+- 严格逐事实 refs + 数字 helper 校验，headline/summary 无豁免；Python 不证明语义 entailment。
+- Job Detail 显式生成及 zh/en/ja；Resume Detail Markdown/Evidence/print。fake/replay、6-case reviewed synthetic eval、--resume HTTP。
+- 回归：267 backend / 21 frontend，Ruff/format/check/build/audit（0 vulnerabilities）、Profile/Jobs/Resume eval、空临时 DB 实际 HTTP 全通过，自动测试 0 live。
+- 唯一一次 live：openai-compatible / glm-5.3-flash / json_object，30084.153 ms，retry=0，MODEL_REQUEST_FAILED / ReadTimeout。usage 未返回，0/0/0 不能当实际 tokens=0；无输出，grounding metrics 不可用。
+- 无真实用户数据或业务 DB 访问，没有 tuning、repair、改 timeout 或第二次请求。重新 live 必须获得新授权；不能声称 Phase 4 完整验收成功。
+
+先读 [PHASE_4.md](PHASE_4.md)，结果 [offline](../evals/results/phase_4/offline.json) / [live](../evals/results/phase_4/live.json)。新代码集中在 models/resumes.py、resume_store.py、workflows/resumes.py、frontend/src/Resumes.tsx。运行路径：Profile → Confirm → Job Analysis → Review → 显式 Generate Resume → Print。
+
+提交当前实现与失败记录、确认 clean 后 STOP。未开始 Resume Revision / Cover Letter / Tracker / Agent / Phase 5。下方 Phase 3.5 与更早条目是历史，不能据其“未开始 Phase 4”覆盖当前状态。
+
+## Historical status (Phase 3.5B-R3)
 
 **Phase 3.5B-R3 Step 2–4 Live Acceptance 完成，已停止，未开始 Phase 4。**
 

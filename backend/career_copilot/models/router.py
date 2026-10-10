@@ -23,6 +23,7 @@ from .jobs import (
 from .profile import NormalizedProfile, ProfileFacts
 from .prompts import PROMPTS, DiagnosticResult, JudgeDiagnosticResult, PromptSpec
 from .providers import JevProvider, OpenAICompatibleProvider
+from .resumes import ResumeDraft, fake_resume
 
 T = TypeVar("T", bound=BaseModel)
 AI_OBSERVER: ContextVar[Callable[[dict], None] | None] = ContextVar("ai_observer", default=None)
@@ -167,6 +168,8 @@ class RoleModel:
                     }
                 elif task == "scoreability-v1" and schema is ScoreabilityResult:
                     value = fake_scoreability(payload)
+                elif task == "resume-generation-v1" and schema is ResumeDraft:
+                    value = fake_resume(payload)
                 elif task == "matching-v1" and schema is Matching:
                     value = fake_matching(payload)
                 else:
