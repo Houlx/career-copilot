@@ -481,7 +481,7 @@ export default function App() {
           <span>个人职业助手</span>
           <span className="mode">{settings?.ai_mode ?? '连接中'} mode</span>
         </header>
-        <main>
+        <main className={path.startsWith('/resumes/') ? 'resume-workspace' : undefined}>
           {error ? (
             <div role="alert" className="card error">
               无法连接后端：{error}

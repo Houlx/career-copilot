@@ -36,6 +36,7 @@ export function RevisionPanel({ resume, go }: { resume: Resume; go: (path: strin
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
   const locked = useRef(false);
+  const scrollArea = useRef<HTMLDivElement>(null);
   const scope = useRef(resume.id);
   scope.current = resume.id;
   useEffect(() => {
@@ -58,6 +59,9 @@ export function RevisionPanel({ resume, go }: { resume: Resume; go: (path: strin
       active = false;
     };
   }, [resume.id]);
+  useEffect(() => {
+    if (scrollArea.current) scrollArea.current.scrollTop = scrollArea.current.scrollHeight;
+  }, [thread]);
   const expected = {
     expected_resume_id: resume.id,
     expected_profile_version: resume.profile_version,
@@ -107,81 +111,85 @@ export function RevisionPanel({ resume, go }: { resume: Resume; go: (path: strin
     }
   }
   return (
-    <section className="card resume-controls">
+    <section className="card resume-controls revision-panel">
       <h2>Revise with AI</h2>
-      {thread && (
-        <nav aria-label="Revision history">
-          <button onClick={() => go(`/resumes/${thread.base_resume_id}`)}>Base resume</button>
-          {thread.history.map((r) => (
-            <button key={r.resume_id} onClick={() => go(`/resumes/${r.resume_id}`)}>
-              Revision #{r.revision_number}
+      <div className="revision-scroll" ref={scrollArea}>
+        {thread && (
+          <nav aria-label="Revision history">
+            <button onClick={() => go(`/resumes/${thread.base_resume_id}`)}>Base resume</button>
+            {thread.history.map((r) => (
+              <button key={r.resume_id} onClick={() => go(`/resumes/${r.resume_id}`)}>
+                Revision #{r.revision_number}
+              </button>
+            ))}
+          </nav>
+        )}
+        {resume.parent_resume_id && (
+          <button onClick={() => go(`/resumes/${resume.parent_resume_id}`)}>Parent resume</button>
+        )}
+        {thread?.messages.map((m) => (
+          <p key={m.id}>
+            <strong>{m.role}: </strong>
+            {m.content}
+          </p>
+        ))}
+        {(resume.outdated || historical) && (
+          <p role="status">
+            历史版本只读。请打开当前已接受的简历；资料或岗位过期时需先重新确认和分析。
+          </p>
+        )}
+        {pending && !historical && (
+          <article aria-label="Pending revision">
+            <h3>Pending revision preview</h3>
+            {pending.proposal.change_summary.map((c, n) => (
+              <p key={n}>{c.summary}</p>
+            ))}
+            {pending.diff.map((d) => (
+              <section key={d.section_kind}>
+                <h4>{d.section_kind}</h4>
+                <div className="revision-diff">
+                  <div>
+                    <h4>Before</h4>
+                    <pre>{text(d.before)}</pre>
+                  </div>
+                  <div>
+                    <h4>After</h4>
+                    <pre>{text(d.after)}</pre>
+                  </div>
+                </div>
+              </section>
+            ))}
+            <button
+              className="primary"
+              disabled={busy || resume.outdated}
+              onClick={() => void run('accept')}
+            >
+              Accept revision
             </button>
-          ))}
-        </nav>
-      )}
-      {resume.parent_resume_id && (
-        <button onClick={() => go(`/resumes/${resume.parent_resume_id}`)}>Parent resume</button>
-      )}
-      {thread?.messages.map((m) => (
-        <p key={m.id}>
-          <strong>{m.role}: </strong>
-          {m.content}
-        </p>
-      ))}
-      {(resume.outdated || historical) && (
-        <p role="status">
-          历史版本只读。请打开当前已接受的简历；资料或岗位过期时需先重新确认和分析。
-        </p>
-      )}
-      <label htmlFor="revision-instruction">修改要求</label>
-      <textarea
-        id="revision-instruction"
-        value={instruction}
-        maxLength={6000}
-        disabled={busy || resume.outdated || historical || !loaded}
-        onChange={(e) => setInstruction(e.target.value)}
-      />
-      <button
-        disabled={busy || resume.outdated || historical || !loaded || !instruction.trim()}
-        onClick={() => void run('send')}
-      >
-        Send
-      </button>
-      {busy && <p role="status">正在处理修改…</p>}
-      {error && <p role="alert">{error}</p>}
-      {pending && !historical && (
-        <article aria-label="Pending revision">
-          <h3>Pending revision preview</h3>
-          {pending.proposal.change_summary.map((c, n) => (
-            <p key={n}>{c.summary}</p>
-          ))}
-          {pending.diff.map((d) => (
-            <section key={d.section_kind}>
-              <h4>{d.section_kind}</h4>
-              <div className="revision-diff">
-                <div>
-                  <h4>Before</h4>
-                  <pre>{text(d.before)}</pre>
-                </div>
-                <div>
-                  <h4>After</h4>
-                  <pre>{text(d.after)}</pre>
-                </div>
-              </div>
-            </section>
-          ))}
-          <button
-            className="primary"
-            disabled={busy || resume.outdated}
-            onClick={() => void run('accept')}
-          >
-            Accept revision
-          </button>
-          <button disabled={busy} onClick={() => void run('reject')}>
-            Reject
-          </button>
-        </article>
-      )}
+            <button disabled={busy} onClick={() => void run('reject')}>
+              Reject
+            </button>
+          </article>
+        )}
+      </div>
+      <div className="revision-composer">
+        <label htmlFor="revision-instruction">修改要求</label>
+        <textarea
+          id="revision-instruction"
+          value={instruction}
+          maxLength={6000}
+          disabled={busy || resume.outdated || historical || !loaded}
+          onChange={(e) => setInstruction(e.target.value)}
+        />
+        <button
+          disabled={busy || resume.outdated || historical || !loaded || !instruction.trim()}
+          onClick={() => void run('send')}
+        >
+          Send
+        </button>
+        {busy && <p role="status">正在处理修改…</p>}
+        {error && <p role="alert">{error}</p>}
+      </div>
     </section>
   );
 }

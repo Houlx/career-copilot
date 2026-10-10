@@ -609,3 +609,106 @@ code {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* Keep revision input visible while the resume and conversation grow. */
+main.resume-workspace {
+  max-width: 1600px;
+  padding-inline: clamp(24px, 3vw, 50px);
+}
+.resume-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+  align-items: start;
+  gap: 24px;
+}
+.resume-main {
+  min-width: 0;
+}
+.resume-main .resume-document {
+  margin-top: 24px;
+  padding: clamp(24px, 3vw, 60px);
+}
+.resume-revision-sidebar {
+  position: sticky;
+  top: 24px;
+  min-width: 0;
+}
+.revision-panel {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - 48px);
+  margin: 0;
+  padding: 20px;
+}
+.revision-panel > h2 {
+  flex-shrink: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8df;
+}
+.revision-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
+  scrollbar-gutter: stable;
+}
+.revision-panel nav {
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin: 0 0 12px;
+}
+.revision-panel nav button {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.revision-panel .revision-diff {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+.revision-composer {
+  flex-shrink: 0;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8df;
+  margin-top: 12px;
+}
+.revision-composer label {
+  display: block;
+  margin-bottom: 6px;
+}
+.revision-composer textarea {
+  display: block;
+  min-height: 80px;
+  max-height: 160px;
+  margin-bottom: 10px;
+}
+@media (max-width: 1100px) {
+  .resume-detail-layout {
+    display: flex;
+    flex-direction: column;
+  }
+  .resume-main,
+  .resume-revision-sidebar {
+    width: 100%;
+  }
+  .resume-revision-sidebar {
+    position: static;
+    order: -1;
+  }
+  .revision-panel {
+    height: min(560px, 75dvh);
+  }
+}
+@media print {
+  .resume-detail-layout,
+  .resume-main {
+    display: block;
+  }
+  .resume-revision-sidebar {
+    display: none !important;
+  }
+  .resume-main .resume-document {
+    padding: 0;
+    margin: 0;
+  }
+}

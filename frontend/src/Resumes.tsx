@@ -155,60 +155,64 @@ export function ResumeDetail({ id, go }: { id: string; go: (path: string) => voi
   const names = labels[resume.language];
   const facts = [draft.headline, ...draft.summary, ...draft.sections.flatMap((s) => s.items)];
   return (
-    <>
-      <div className="resume-controls">
-        <button onClick={() => go(`/jobs/${resume.job_id}`)}>← 查看关联岗位分析</button>
-        <p>
-          {languages[resume.language]} · Profile version: {resume.profile_version} ·{' '}
-          {resume.outdated ? 'Outdated' : 'Current'}
-        </p>
-        {resume.outdated && (
-          <p role="status" className="error">
-            This resume was generated from an older Career Profile. 历史简历已过期。
+    <div className="resume-detail-layout">
+      <div className="resume-main">
+        <div className="resume-controls">
+          <button onClick={() => go(`/jobs/${resume.job_id}`)}>← 查看关联岗位分析</button>
+          <p>
+            {languages[resume.language]} · Profile version: {resume.profile_version} ·{' '}
+            {resume.outdated ? 'Outdated' : 'Current'}
           </p>
-        )}
-        <button onClick={() => setMarkdown((v) => !v)}>Markdown View</button>
-        <button onClick={() => window.print()}>Print / Save as PDF</button>
-      </div>
-      {markdown && <pre className="resume-controls">{resume.markdown}</pre>}
-      <article className="resume-document" lang={resume.language}>
-        <h1>{draft.headline.text}</h1>
-        <section>
-          <h2>{names.summary}</h2>
-          {draft.summary.map((i, n) => (
-            <p key={n}>{i.text}</p>
-          ))}
-        </section>
-        {draft.sections.map((s) => (
-          <section key={s.kind}>
-            <h2>{names[s.kind]}</h2>
-            <ul>
-              {s.items.map((i, n) => (
-                <li key={n}>{i.text}</li>
-              ))}
-            </ul>
+          {resume.outdated && (
+            <p role="status" className="error">
+              This resume was generated from an older Career Profile. 历史简历已过期。
+            </p>
+          )}
+          <button onClick={() => setMarkdown((v) => !v)}>Markdown View</button>
+          <button onClick={() => window.print()}>Print / Save as PDF</button>
+        </div>
+        {markdown && <pre className="resume-controls">{resume.markdown}</pre>}
+        <article className="resume-document" lang={resume.language}>
+          <h1>{draft.headline.text}</h1>
+          <section>
+            <h2>{names.summary}</h2>
+            {draft.summary.map((i, n) => (
+              <p key={n}>{i.text}</p>
+            ))}
           </section>
-        ))}
-      </article>
-      <RevisionPanel key={resume.id} resume={resume} go={go} />
-      <details className="card resume-controls">
-        <summary>Show Evidence</summary>
-        {facts.map((item, n) => (
-          <details key={n}>
-            <summary>{item.text}</summary>
-            {item.evidence_ids.map((eid) => {
-              const e = resume.evidence.find((e) => e.id === eid);
-              return (
-                <div key={eid}>
-                  <code>{eid}</code>
-                  <p>{e?.title}</p>
-                  <p>{e?.normalized_content}</p>
-                </div>
-              );
-            })}
-          </details>
-        ))}
-      </details>
-    </>
+          {draft.sections.map((s) => (
+            <section key={s.kind}>
+              <h2>{names[s.kind]}</h2>
+              <ul>
+                {s.items.map((i, n) => (
+                  <li key={n}>{i.text}</li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </article>
+        <details className="card resume-controls">
+          <summary>Show Evidence</summary>
+          {facts.map((item, n) => (
+            <details key={n}>
+              <summary>{item.text}</summary>
+              {item.evidence_ids.map((eid) => {
+                const e = resume.evidence.find((e) => e.id === eid);
+                return (
+                  <div key={eid}>
+                    <code>{eid}</code>
+                    <p>{e?.title}</p>
+                    <p>{e?.normalized_content}</p>
+                  </div>
+                );
+              })}
+            </details>
+          ))}
+        </details>
+      </div>
+      <div className="resume-revision-sidebar" role="complementary" aria-label="Resume revision">
+        <RevisionPanel key={resume.id} resume={resume} go={go} />
+      </div>
+    </div>
   );
 }
