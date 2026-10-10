@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 
 from ..config import ModelConfig, Settings
 from ..errors import CopilotError, ErrorCode
+from .contracts import build_prompt_contract, contract_hash
 from .diagnostics import DIAGNOSTICS_ENABLED
 from .jobs import (
     JobExtraction,
@@ -67,6 +68,8 @@ class RoleModel:
         spec = PROMPTS[task]
         if spec.role != self.config.role:
             raise ValueError("Task role does not match model role")
+        if spec.response_model is not None and schema is not spec.response_model:
+            raise ValueError("Task response model does not match validation model")
         started = perf_counter()
         meta = {
             "model_role": self.config.role,
@@ -83,6 +86,8 @@ class RoleModel:
             "latency_ms": 0.0,
             "retry_count": 0,
         }
+        if spec.response_model is not None:
+            meta["schema_contract_hash"] = contract_hash(build_prompt_contract(spec.response_model))
         if self.config.provider == "openai_compatible":
             meta["structured_output_mode"] = self.config.structured_output_mode
         if self.config.role == "generation":
@@ -101,7 +106,7 @@ class RoleModel:
         diagnostics_token = DIAGNOSTICS_ENABLED.set(self.debug)
         payload_observer = AI_PAYLOAD_OBSERVER.get()
         if payload_observer:
-            payload_observer({"prompt": spec.system, "input": payload})
+            payload_observer({"prompt": spec.runtime_system, "input": payload})
         try:
             if self.mode == "fake":
                 # Offline identity fixtures: preserve supplied text, never invent user facts.

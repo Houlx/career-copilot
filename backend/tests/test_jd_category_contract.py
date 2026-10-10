@@ -1,11 +1,11 @@
 """JD prompt/schema alignment and provider boundaries; no real model traffic."""
 
 import json
-import re
 
 import httpx
 import pytest
 from career_copilot.errors import ErrorCode
+from career_copilot.models.contracts import build_prompt_contract, contract_hash
 from career_copilot.models.jobs import ExtractedRequirement, JobRequirements
 from career_copilot.models.prompts import PROMPTS
 from career_copilot.models.router import ModelRouter
@@ -25,14 +25,10 @@ CANONICAL_CATEGORIES = {
 
 
 def test_prompt_categories_equal_authoritative_schema():
-    prompt = PROMPTS["jd-requirements-v2"].system
-    category_clause = prompt.split("category: exactly one of ", 1)[1].split(". ", 1)[0]
-    prompt_values = re.findall(r'"([a-z_]+)"', category_clause)
-    schema_values = ExtractedRequirement.model_json_schema()["properties"]["category"]["enum"]
-    assert len(prompt_values) == 9
-    assert set(prompt_values) == set(schema_values) == CANONICAL_CATEGORIES
-    assert 'importance: exactly one of "required" or "preferred"' in prompt
-    assert "Do not invent, translate, rename, create synonyms" in prompt
+    contract = build_prompt_contract(PROMPTS["jd-requirements-v2"].response_model)
+    fields = contract["properties"]["requirements"]["items"]["properties"]
+    assert set(fields["category"]["enum"]) == CANONICAL_CATEGORIES
+    assert fields["importance"]["enum"] == ["required", "preferred"]
 
 
 @pytest.mark.parametrize("category", sorted(CANONICAL_CATEGORIES))
@@ -73,7 +69,7 @@ def test_mock_provider_json_object_through_job_analysis(client, settings, monkey
         body = json.loads(request.content)
         requests.append(body)
         assert body["response_format"] == {"type": "json_object"}
-        assert body["messages"][0]["content"] == PROMPTS["jd-requirements-v2"].system
+        assert body["messages"][0]["content"] == PROMPTS["jd-requirements-v2"].runtime_system
         return httpx.Response(200, json={"choices": [{"message": {"content": json.dumps(output)}}]})
 
     real_client = httpx.Client
@@ -102,6 +98,9 @@ def test_mock_provider_json_object_through_job_analysis(client, settings, monkey
     response = client.post("/api/jobs/analyze", json={"raw_jd": "Synthetic JD"})
     trace = client.get("/api/debug/runs/" + response.json()["run_id"]).json()
     extraction = trace["nodes"][1]
+    assert extraction["ai"]["schema_contract_hash"] == contract_hash(
+        build_prompt_contract(JobRequirements)
+    )
     if invalid:
         assert response.status_code == 500
         assert response.json()["error_code"] == ErrorCode.MODEL_OUTPUT_INVALID.value, response.text

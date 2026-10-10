@@ -2,7 +2,22 @@
 
 更新日期：2026-10-10（Asia/Shanghai）
 
-## Current status — JD Requirements Category Contract Fix
+## Current status — Phase 4.4
+
+**Pydantic-driven structured output contracts 完成。Agent live requests=0，没有 Phase 5。**
+
+- 架构：Pydantic → compact JSON contract → Prompt → json_object → Pydantic authoritative validation。五个业务 Generation tasks 和 Generation diagnostic 绑定现有 response model；统一 runtime assembly，无新增重复 model。
+- 已解决结构来源漂移：jd-requirements-v2 category、matching-v1 results/matches、result/status、explanation/reason。未来字段/enum/required/约束修改从 Pydantic 自动流向 Prompt，不再维护独立结构文本。
+- Local refs inline 展开、保留 nested/enum/required/additionalProperties/Field constraints、删除提示 metadata；递归、未解析 ref、未知 schema keyword 明确失败。未知 enum / 错误字段仍严格拒绝，无 repair、alias、fallback 或 schema 放宽。
+- Trace 增加稳定 schema_contract_hash；production 不保存完整 schema。Prompt version 不升级：现有 replay key 不含 system 文本，fixtures 全部保留；replay hash 指当前 contract，不能证明历史 fixture 当时使用了该 contract。
+- 保留开始时已有的 reasoning policy（facts=low、JD v2/matching=high、历史 JD v1=low），本阶段不调整。同步旧测试/HTTP 检查的 policy 断言，解除此前工作区的既有不一致；按本阶段提交和 clean tree 要求一并提交现有 prompts.py 修改。`.env`、timeout、retry、max output tokens 不变。
+- 回归：**420 backend / 25 frontend tests passed**；Ruff check/format、frontend check/build/audit（0 vulnerabilities）、Profile 10-case、Jobs 12/8/5-case、Resume 6-case replay eval 全通过。独立端口/临时空 DB fake HTTP `--resume` 通过，覆盖 Profile/Job/Matching/Resume/trace/contract hash；临时服务/DB/config 已清理。**0 live requests**，未操作 browser。
+- Frontend 审计：现有 api.ts 仅消费 backend 已验证 API 数据，match 使用 status/reason/evidence_ids，category 为 string；无错误 results/result/explanation 输出 contract、无模型提示或 repair。保持现有类型，不新增第三份 schema。
+- 离线记录注入长度和近似 token proxy，未做 live tuning；详见 [STRUCTURED_OUTPUT_CONTRACT.md](STRUCTURED_OUTPUT_CONTRACT.md)。完整原 schema 在 Resume 引用共享时更小，已明确记录 inline 展开的取舍。
+
+用户下一步：重启 backend，使用同一份点云 JD 再跑 Job Analysis；检查 extract_job_requirements 和 matching-v1 Pydantic success、failure_stage absent 及 schema_contract_hash；再生成 Resume 确认 schema/grounding 正常。Agent 不执行这些 live 验证。完成本阶段提交后 STOP。
+
+## Historical status — JD Requirements Category Contract Fix
 
 **`jd-requirements-v2` category prompt/schema contract alignment 完成；Agent live requests=0，没有 Phase 5。**
 

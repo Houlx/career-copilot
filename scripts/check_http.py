@@ -3,6 +3,8 @@
 import argparse
 
 import httpx
+from career_copilot.models.contracts import build_prompt_contract, contract_hash
+from career_copilot.models.prompts import PROMPTS
 
 
 def main():
@@ -28,7 +30,12 @@ def main():
         config.raise_for_status()
         assert config.json()["ai_mode"] == "fake", "Run smoke check with AI_MODE=fake"
         assert config.json()["debug_enabled"], "Run smoke check in development"
-        assert config.json()["task_policies"] == {"profile-facts-v1": {"reasoning_effort": "low"}}
+        policies = {
+            task: {"reasoning_effort": spec.reasoning_effort}
+            for task, spec in PROMPTS.items()
+            if spec.role == "generation" and spec.reasoning_effort is not None
+        }
+        assert config.json()["task_policies"] == policies
         role_effort = next(
             model["reasoning_effort"]
             for model in config.json()["models"]
@@ -39,11 +46,19 @@ def main():
             for node in nodes:
                 ai = node["ai"]
                 if ai and ai["model_role"] == "generation":
-                    is_facts = ai["prompt_version"] == "profile-facts-v1"
-                    assert ai["reasoning_effort"] == ("low" if is_facts else role_effort)
+                    spec = PROMPTS[ai["prompt_version"]]
+                    assert ai["reasoning_effort"] == (spec.reasoning_effort or role_effort)
                     assert ai["reasoning_source"] == (
-                        "task" if is_facts else "role" if role_effort else "provider_default"
+                        "task"
+                        if spec.reasoning_effort
+                        else "role"
+                        if role_effort
+                        else "provider_default"
                     )
+                    assert ai["schema_contract_hash"] == contract_hash(
+                        build_prompt_contract(spec.response_model)
+                    )
+                    assert "failure_stage" not in ai
                     assert ai["provider"] == "fake"
                     assert ai["total_tokens"] == 0
 

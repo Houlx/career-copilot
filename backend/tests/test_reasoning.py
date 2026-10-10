@@ -43,7 +43,11 @@ def test_settings_reasoning_allowlist_and_privacy(settings, effort):
     models = {item["role"]: item for item in response.json()["models"]}
     assert models["generation"]["reasoning_effort"] == effort
     assert "reasoning_effort" not in models["judge"]
-    assert response.json()["task_policies"] == {"profile-facts-v1": {"reasoning_effort": "low"}}
+    assert response.json()["task_policies"] == {
+        task: {"reasoning_effort": spec.reasoning_effort}
+        for task, spec in PROMPTS.items()
+        if spec.role == "generation" and spec.reasoning_effort is not None
+    }
     for spec in PROMPTS.values():
         assert spec.system not in response.text
     for private in ("private-key", "password", "private.example", "base_url", "raw_payload"):
@@ -95,15 +99,15 @@ def test_exact_wire_body_and_router_config(monkeypatch, settings, task, schema, 
     expected = {
         "model": "glm-5.3-flash",
         "messages": [
-            {"role": "system", "content": spec.system},
+            {"role": "system", "content": spec.runtime_system},
             {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
         ],
         "temperature": spec.temperature,
         "max_tokens": spec.max_output_tokens,
         "response_format": expected_format,
     }
-    effective = "low" if task == "profile-facts-v1" else effort
-    source = "task" if task == "profile-facts-v1" else "role" if effort else "provider_default"
+    effective = PROMPTS[task].reasoning_effort or effort
+    source = "task" if PROMPTS[task].reasoning_effort else "role" if effort else "provider_default"
     if effective is not None:
         expected["reasoning_effort"] = effective
     calls = []
@@ -287,12 +291,17 @@ def test_persisted_trace_and_http_hide_reasoning(monkeypatch, settings, outcome)
     assert marker not in response.text
 
 
-def test_only_profile_facts_has_task_override():
+def test_existing_task_overrides_preserved():
     assert {
         task: spec.reasoning_effort
         for task, spec in PROMPTS.items()
         if spec.reasoning_effort is not None
-    } == {"profile-facts-v1": "low"}
+    } == {
+        "profile-facts-v1": "low",
+        "jd-extract-v1": "low",
+        "jd-requirements-v2": "high",
+        "matching-v1": "high",
+    }
 
 
 @pytest.mark.parametrize("mode", ["fake", "replay", "live"])
@@ -325,8 +334,8 @@ def test_effective_policy_persisted_for_every_mode(
         settings.replay_dir = settings.database_path.parent / "missing-fixtures"
     if failure and mode == "fake":
         payload = {}
-    effective = "low" if task == "profile-facts-v1" else effort
-    source = "task" if task == "profile-facts-v1" else "role" if effort else "provider_default"
+    effective = PROMPTS[task].reasoning_effort or effort
+    source = "task" if PROMPTS[task].reasoning_effort else "role" if effort else "provider_default"
     if mode == "live":
         # Output comes from a local fake call, HTTP always intercepted.
         fake_settings = settings.model_copy(update={"ai_mode": "fake"})

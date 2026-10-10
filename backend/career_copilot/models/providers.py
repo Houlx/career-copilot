@@ -110,7 +110,7 @@ class OpenAICompatibleProvider(HTTPProvider):
         body = {
             "model": self.config.model,
             "messages": [
-                {"role": "system", "content": spec.system},
+                {"role": "system", "content": spec.runtime_system},
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
             ],
             "temperature": spec.temperature,

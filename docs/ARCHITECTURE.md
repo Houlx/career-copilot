@@ -35,21 +35,23 @@ Role-level fallback (GENERATION_REASONING_EFFORT)
 Provider default (wire field absent)
 ```
 
-这是 deterministic inference configuration。唯一显式 task policy 为 profile-facts-v1=low，其余 Generation task 默认 None。RoleModel 每次调用解析 effective reasoning/source，live 时复制 role ModelConfig 注入 Provider，不修改共享 role 配置。task override 优先；role-level low/high/max 能力保留，默认 unset。Workflow 只调用 task，Provider 不知道业务 task policy。没有模型名/URL 检测，没有 Agent 决策、模型动态选 reasoning、self-reflection 或 dynamic graph routing；业务图不变。
+这是 deterministic inference configuration。当前沿用工作区已有 Generation task policy：profile-facts-v1=low、jd-requirements-v2=high、matching-v1=high，其余默认 None；历史 jd-extract-v1=low 保留。Phase 4.4 未调整 policy。RoleModel 每次调用解析 effective reasoning/source，live 时复制 role ModelConfig 注入 Provider，不修改共享 role 配置。task override 优先；role-level low/high/max 能力保留，默认 unset。Workflow 只调用 task，Provider 不知道业务 task policy。没有模型名/URL 检测，没有 Agent 决策、模型动态选 reasoning、self-reflection 或 dynamic graph routing；业务图不变。
 
 成功/失败/fake/replay trace 记录 reasoning_effort 和 reasoning_source=task/role/provider_default；表示最终请求配置，不是服务端执行确认。不存 hidden reasoning，不扩 token schema。Canonical replay hash 仍只由 task/version/business payload 决定，fixtures 无变化。Judge/Jev 不变。
 
 Settings API 保留 role 配置，新增只读 task_policies，显式仅序列化 task name 与 reasoning policy；不返回完整 PromptSpec、正文、URL 或 secret。前端只读。角色 timeout 默认 30/30 秒、本地 60/30 秒；本地全局 reasoning override 已注释。实验及边界见 [PHASE_4_3.md](PHASE_4_3.md)。
 
-## JD requirement category contract alignment
+## Structured Generation Contract Layer (Phase 4.4)
 
-`jd-requirements-v2` 的 importance 原已明确 required/preferred，实际校验正常；category 的九值 Literal 原只存在于 Pydantic schema，未在 prompt 列举。用户 trace 在 HTTP 200、JSON shape 正确的 20 条 requirements 中出现 16 个 category literal_error，importance errors=0。json_object 保证 JSON 对象输出，不保证本地 Pydantic Literal compliance；此次修复针对 category schema/prompt contract mismatch。
+```text
+Pydantic response model → compact prompt contract → Prompt → json_object → Pydantic validation
+```
 
-Prompt 的 category 列表直接由现有 `ExtractedRequirement.model_fields["category"].annotation` 的 Literal 参数生成：education、experience、skill、certification、language、capability、logistics、personal_trait、other。要求 exactly one of，禁止 invent/translate/rename/synonyms/其他值。原 Pydantic schema 完全不变，仍是最终 authoritative validator；没有新增 enum、映射、归一化、repair、fallback 或业务规则改动。
+`PromptSpec.response_model` binds the five structured business Generation tasks and Generation diagnostic to their existing authoritative models. `runtime_system` appends the automatically derived compact contract to business instructions; the OpenAI-compatible adapter and development debug payload use the same assembly. Pydantic is the single source of truth for field names, enum values, requiredness and structural constraints. Schema is deterministic. No LLM is used to generate schemas.
 
-架构原则：当 Provider 使用 json_object 而不保证 strict json_schema 时，模型可枚举字段必须同时在 Prompt contract 和本地 Pydantic schema 中保持一致。此修复通过现有 schema 生成 prompt 列表及 deterministic 集合一致性测试防止漂移，无需重构模型层。MockTransport 验证合法 JSON 经 Pydantic 到完整 Job Analysis；未知 programming 继续严格拒绝，不保存结果。reasoning、retry、timeout、scoreability/Jev 与 structured output 配置均不由此修复改变。
+The small helper resolves local refs inline, removes presentation metadata and preserves structural/Field constraints. Recursive/unresolved refs and unsupported structures fail loudly. Prompt contract helps generation; json_object only guarantees JSON syntax, and Pydantic remains authoritative. No repair, alias, fallback or validator relaxation. This replaces the former category-only Literal prompt helper and removes matching's hand-maintained shape/field/enum contract.
 
-验证结果及既有未提交 reasoning 修改导致的工作区回归差异见 [HANDOFF.md](HANDOFF.md)。没有 live 请求；真实 JD 验收由用户重启 backend 后执行。
+Trace metadata adds `schema_contract_hash`, never a production schema dump. Existing opt-in development payload policy governs final prompt visibility. Prompt versions and replay fixtures remain unchanged because replay keys depend only on task/version/canonical business payload, not prompt bytes. Existing provider configuration, reasoning policies, timeout, retry and output limits remain unchanged. Details, size observations and manual validation: [STRUCTURED_OUTPUT_CONTRACT.md](STRUCTURED_OUTPUT_CONTRACT.md).
 
 ## State and persistence
 
@@ -79,7 +81,7 @@ Debug API 仅 development 可用，production/test 均返回 404。这不是 aut
 
 ## Configurable Provider output contract（Phase 3.5B-R2）
 
-Provider wire format 与业务 schema 分层。ModelConfig.structured_output_mode 支持 json_schema/json_object；Settings 的 GENERATION_STRUCTURED_OUTPUT 默认 json_schema，只有显式选择才调整 Generation。json_schema 保留 name/strict=true/原 Pydantic schema；json_object 只发送 response_format.type=json_object，不发送 schema 参数或改变任务 prompt。GLM 本地显式选 json_object，不按 URL/模型名自动推断 capability；Judge/Jev 原协议不变。
+Provider wire format 与业务 schema 分层。ModelConfig.structured_output_mode 支持 json_schema/json_object；Settings 的 GENERATION_STRUCTURED_OUTPUT 默认 json_schema，只有显式选择才调整 Generation。json_schema 保留 name/strict=true/原 Pydantic schema；json_object 只发送 response_format.type=json_object，不发送 schema 参数；Phase 4.4 在应用层自动注入 Pydantic-derived prompt contract。GLM 本地显式选 json_object，不按 URL/模型名自动推断 capability；Judge/Jev 原协议不变。
 
 两种模式共享 R1 的解析、严格 schema.model_validate_json 和后续 business grounding；不 strip fence、repair、coerce 或 fallback。原 invoke 仍携带业务 schema，PromptSpec 不变。Settings API models 与 AI metadata 新增 structured_output_mode；Jev 的 Settings 字段为 null，trace 不伪装成 JSON 输出。前端 Settings 展示该配置值。Profile eval 成功分支显式记录 schema_mapping_success/business_validation_success。
 
