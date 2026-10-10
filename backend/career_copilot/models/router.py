@@ -190,7 +190,7 @@ class RoleModel:
                     value = fake_scoreability(payload)
                 elif task == "resume-revision-agent-v1" and schema is ResumeRevisionProposal:
                     value = fake_revision(payload)
-                elif task == "resume-generation-v1" and schema is ResumeDraft:
+                elif task == "resume-generation-v2" and schema is ResumeDraft:
                     value = fake_resume(payload)
                 elif task == "matching-v1" and schema is Matching:
                     value = fake_matching(payload)

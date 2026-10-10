@@ -24,7 +24,7 @@ def build_resume_graph(trace, resumes, models):
         return resumes.context(s["job_id"], s["language"])
 
     def generate(s):
-        result = models.generation_model.invoke("resume-generation-v1", s["context"], ResumeDraft)
+        result = models.generation_model.invoke("resume-generation-v2", s["context"], ResumeDraft)
         return {"draft": result.output.model_dump()}
 
     def schema(s):

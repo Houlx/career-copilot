@@ -119,7 +119,7 @@ Generation / GLM
 ├─ profile-normalize-v1
 ├─ jd-requirements-v2 (text / importance / category)
 ├─ matching-v1
-└─ resume-generation-v1 (Phase 4)
+└─ resume-generation-v2 (Phase 4)
 Judge / Jev
 └─ scoreability-v1 (finite native Choice)
 Python
@@ -159,7 +159,7 @@ replay 使用 task + prompt_version + 输入 canonical hash 选择明确 fixture
 flowchart TD
     J[Completed current Job Analysis] --> Click[Explicit Generate Resume + language]
     Click --> Load[Load current confirmed Profile / saved Job context]
-    Load --> G[Generation resume-generation-v1]
+    Load --> G[Generation resume-generation-v2]
     G --> Schema[Strict structured schema]
     Schema --> Ground[Python refs / active version / numeric grounding]
     Ground --> Lang[Lightweight language contract]

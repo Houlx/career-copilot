@@ -229,7 +229,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.post("/api/jobs/{job_id}/resumes")
     def generate_resume(job_id: str, body: ResumeRequest):
-        trace = RunTrace(db, settings, "resume_generation_workflow", "resume-generation-v1")
+        trace = RunTrace(db, settings, "resume_generation_workflow", "resume-generation-v2")
         state = trace.execute(
             build_resume_graph(trace, resumes, router),
             {"job_id": job_id, "language": body.language},
@@ -313,7 +313,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def replay_node(body: ReplayRequest):
         # Forced replay: independent execution without business or trace writes.
         tasks = {
-            "resume-generation-v1": ("generation_model", ResumeDraft),
+            "resume-generation-v2": ("generation_model", ResumeDraft),
             "resume-revision-agent-v1": ("generation_model", ResumeRevisionProposal),
             "jd-requirements-v2": ("generation_model", JobRequirements),
             "scoreability-v1": ("judge_model", ScoreabilityResult),

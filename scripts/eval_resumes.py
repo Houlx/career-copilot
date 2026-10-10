@@ -41,8 +41,8 @@ def main():
     cases = json.loads((ROOT / "evals/resumes/cases.json").read_text())
     if args.live:
         cases = cases[:1]
-    model = evaluation_model(settings, "resume-generation-v1", live=args.live)
-    announce(model, "resume-generation-v1", len(cases), live=args.live)
+    model = evaluation_model(settings, "resume-generation-v2", live=args.live)
+    announce(model, "resume-generation-v2", len(cases), live=args.live)
     calls, results = [], []
     token = AI_OBSERVER.set(calls.append)
     success = True
@@ -52,7 +52,7 @@ def main():
             schema_success = False
             try:
                 output = model.invoke(
-                    "resume-generation-v1", case["payload"], ResumeDraft, max_attempts=1
+                    "resume-generation-v2", case["payload"], ResumeDraft, max_attempts=1
                 ).output
                 schema_success = True
                 evidence = [

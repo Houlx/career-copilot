@@ -20,7 +20,7 @@ Pydantic is the single source of truth for output fields, types, enum values, re
 | profile-normalize-v1 | NormalizedProfile |
 | jd-requirements-v2 | JobRequirements (nested ExtractedRequirement) |
 | matching-v1 | Matching (nested Match) |
-| resume-generation-v1 | ResumeDraft |
+| resume-generation-v2 | ResumeDraft |
 | generation-diagnostic-v1 | DiagnosticResult |
 
 `PromptSpec.response_model=None` preserves the original system prompt for other tasks. Judge/Jev native Choice and Noul protocols and historical JD extraction are unchanged. Router rejects a supplied validation model that differs from a task's bound response model before executing the task.
@@ -67,3 +67,9 @@ Offline validation: 420 backend tests; Ruff check/format; frontend check, 25 tes
 The user can manually restart the backend, confirm Generation remains json_object, and run Job Analysis with the same point-cloud JD. Check `extract_job_requirements` and `matching-v1` for successful Pydantic validation and absent `failure_stage`; note `schema_contract_hash`, token usage, latency and retry count. Then generate a Resume and check its existing schema/grounding validation. Offline tests do not establish live model compliance. No Phase 5 work is included.
 
 Phase 5：nullable `ResumeRevisionProposal.updated_resume` 通过递归 anyOf compact 保留各分支及 nested constraints。未知关键词仍拒绝；原五个业务 contract 不变。
+
+## Resume generation v2 update
+
+The active task is now resume-generation-v2; ResumeDraft and its contract hash are unchanged. The business prompt is the supplied semantic-content prompt plus application mapping for mandatory headline/summary/sections and existing section kinds. No identity/contact fields or PDF renderer were added. The size table above records the historical v1 observation.
+
+Workflow, trace, fake mode, debug replay API/UI, reasoning tests and eval runner use v2. New v2 replay files reuse synthetic v1 outputs for contract and grounding regression only; they are not live captures. Historical v1 files/results remain unchanged. Exact task/version lookup has no cross-version fallback. Offline replay does not evaluate compliance with the new prose instructions.

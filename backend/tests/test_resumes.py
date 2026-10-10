@@ -13,7 +13,7 @@ from career_copilot.models.resumes import (
     validate_grounding,
     validate_language,
 )
-from career_copilot.models.router import ModelResult
+from career_copilot.models.router import ModelResult, ModelRouter, replay_key
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
@@ -61,7 +61,7 @@ def test_resume_flow_restart_history_delete_trace(client, settings):
         trace = client.get("/api/debug/runs/" + body["run_id"]).json()
         assert len(trace["nodes"]) == 7
         assert trace["nodes"][1]["ai"]["model_role"] == "generation"
-        assert trace["nodes"][1]["ai"]["prompt_version"] == "resume-generation-v1"
+        assert trace["nodes"][1]["ai"]["prompt_version"] == "resume-generation-v2"
         assert trace["nodes"][3]["validation_result"]["invalid_evidence_reference_count"] == 0
         assert all("debug_payload" not in n for n in trace["nodes"])
         assert "Built Python tools" not in json.dumps(trace)
@@ -251,15 +251,40 @@ def test_resume_replay_isolated(client):
     case = json.loads(Path("evals/resumes/cases.json").read_text())[0]
     before = client.get("/api/debug/runs").json()
     response = client.post(
-        "/api/debug/replay", json={"task": "resume-generation-v1", "payload": case["payload"]}
+        "/api/debug/replay", json={"task": "resume-generation-v2", "payload": case["payload"]}
     )
     response.raise_for_status()
     assert response.json()["output"] == case["expected"]
     assert response.json()["metadata"]["provider"] == "replay"
+    assert response.json()["metadata"]["prompt_version"] == "resume-generation-v2"
     assert client.get("/api/debug/runs").json() == before
     assert client.get("/api/profile").json() == {"profile": None}
-    missing = client.post("/api/debug/replay", json={"task": "resume-generation-v1", "payload": {}})
+    missing = client.post("/api/debug/replay", json={"task": "resume-generation-v2", "payload": {}})
     assert missing.json()["error_code"] == "REPLAY_NOT_FOUND"
+
+
+def test_resume_v2_replay_never_falls_back_to_v1(settings, tmp_path):
+    case = json.loads(Path("evals/resumes/cases.json").read_text())[0]
+    settings.ai_mode = "replay"
+    settings.replay_dir = tmp_path
+    legacy = {
+        "task": "resume-generation-v1",
+        "prompt_version": "resume-generation-v1",
+        "output": case["expected"],
+    }
+    old_key = replay_key(legacy["task"], legacy["prompt_version"], case["payload"])
+    (tmp_path / old_key).write_text(json.dumps(legacy))
+    model = ModelRouter(settings).generation_model
+    with pytest.raises(CopilotError) as missing:
+        model.invoke("resume-generation-v2", case["payload"], ResumeDraft)
+    assert missing.value.code.value == "REPLAY_NOT_FOUND"
+
+    # A record at the v2 path must itself declare the correct task and version.
+    key = replay_key("resume-generation-v2", "resume-generation-v2", case["payload"])
+    (tmp_path / key).write_text(json.dumps(legacy))
+    with pytest.raises(CopilotError) as invalid:
+        model.invoke("resume-generation-v2", case["payload"], ResumeDraft)
+    assert invalid.value.code.value == "MODEL_OUTPUT_INVALID"
 
 
 def test_schema_v3_migration_preserves_artifacts(tmp_path):

@@ -62,7 +62,7 @@ def test_settings_reasoning_allowlist_and_privacy(settings, effort):
         ("profile-normalize-v1", NormalizedProfile),
         ("jd-requirements-v2", JobRequirements),
         ("matching-v1", Matching),
-        ("resume-generation-v1", ResumeDraft),
+        ("resume-generation-v2", ResumeDraft),
         ("resume-revision-agent-v1", ResumeRevisionProposal),
         ("generation-diagnostic-v1", DiagnosticResult),
     ],
@@ -303,14 +303,14 @@ def test_existing_task_overrides_preserved():
         "jd-extract-v1": "low",
         "jd-requirements-v2": "high",
         "matching-v1": "high",
-        "resume-generation-v1": "high",
+        "resume-generation-v2": "high",
         "resume-revision-agent-v1": "high",
     }
 
 
 @pytest.mark.parametrize("mode", ["fake", "replay", "live"])
 @pytest.mark.parametrize("effort", [None, "low", "high"])
-@pytest.mark.parametrize("task", ["profile-facts-v1", "resume-generation-v1"])
+@pytest.mark.parametrize("task", ["profile-facts-v1", "resume-generation-v2"])
 @pytest.mark.parametrize("failure", [False, True])
 def test_effective_policy_persisted_for_every_mode(
     monkeypatch, settings, mode, effort, task, failure

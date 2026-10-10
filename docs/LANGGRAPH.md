@@ -46,7 +46,7 @@ flowchart TB
     subgraph Resumes["③ 简历生成 · ResumeState · 7 nodes"]
         direction TB
         RS((START)) --> R1["load_resume_context<br/>已确认 Profile + 当前 Job + Evidence"]
-        R1 --> R2["generate_resume<br/>Generation · resume-generation-v1"]:::generation
+        R1 --> R2["generate_resume<br/>Generation · resume-generation-v2"]:::generation
         R2 --> R3["validate_resume_schema<br/>严格 ResumeDraft schema"]
         R3 --> R4["validate_resume_grounding<br/>事实引用、数字及版本校验"]
         R4 --> R5["validate_resume_language<br/>语言约束校验"]

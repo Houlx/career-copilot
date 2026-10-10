@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+import { resumeReplay } from './resumeReplay';
 
 const settings = {
   ai_mode: 'fake',
@@ -20,7 +21,7 @@ const settings = {
     'profile-facts-v1': { reasoning_effort: 'low' },
     'jd-requirements-v2': { reasoning_effort: 'high' },
     'matching-v1': { reasoning_effort: 'high' },
-    'resume-generation-v1': { reasoning_effort: 'high' },
+    'resume-generation-v2': { reasoning_effort: 'high' },
     'resume-revision-agent-v1': { reasoning_effort: 'high' },
   },
   prompts: { diagnostic: 'diagnostic-v1' },
@@ -100,6 +101,23 @@ describe('Phase 1 shell', () => {
     expect(screen.getByText(/还没有运行记录/)).toBeInTheDocument();
   });
 
+  it('submits the resume v2 task with the resume evidence payload', async () => {
+    window.history.replaceState({}, '', '/debug/runs');
+    render(<App />);
+    fireEvent.change(await screen.findByRole('combobox'), {
+      target: { value: 'resume-generation-v2' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Replay resume-generation-v2' }));
+    await waitFor(() =>
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/debug/replay',
+        expect.objectContaining({
+          body: JSON.stringify({ task: 'resume-generation-v2', payload: resumeReplay }),
+        }),
+      ),
+    );
+  });
+
   it('hides debug navigation outside development', async () => {
     vi.stubGlobal(
       'fetch',
@@ -156,7 +174,7 @@ describe('Generation reasoning configuration', () => {
     expect(screen.getByText('low')).toBeInTheDocument();
     expect(screen.getByText('jd-requirements-v2')).toBeInTheDocument();
     expect(screen.getByText('matching-v1')).toBeInTheDocument();
-    expect(screen.getByText('resume-generation-v1')).toBeInTheDocument();
+    expect(screen.getByText('resume-generation-v2')).toBeInTheDocument();
     expect(screen.getByText('resume-revision-agent-v1')).toBeInTheDocument();
     expect(screen.getAllByText('high')).toHaveLength(4);
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();

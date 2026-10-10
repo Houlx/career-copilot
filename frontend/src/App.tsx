@@ -228,7 +228,7 @@ function DebugRuns({ path, go }: { path: string; go: (path: string) => void }) {
         source_quote: '使用 Python。',
       };
       const payload =
-        replayTask === 'resume-generation-v1'
+        replayTask === 'resume-generation-v2'
           ? resumeReplay
           : replayTask === 'jd-extract-v1' || replayTask === 'jd-requirements-v2'
             ? { raw_jd: 'Synthetic Python developer. Python required.' }
@@ -405,7 +405,7 @@ function DebugRuns({ path, go }: { path: string; go: (path: string) => void }) {
             <option value="scoreability-v1">scoreability-v1</option>
             <option value="jd-extract-v1">jd-extract-v1</option>
             <option value="matching-v1">matching-v1</option>
-            <option value="resume-generation-v1">resume-generation-v1</option>
+            <option value="resume-generation-v2">resume-generation-v2</option>
             <option value="profile-facts-v1">profile-facts-v1</option>
             <option value="profile-normalize-v1">profile-normalize-v1</option>
           </select>

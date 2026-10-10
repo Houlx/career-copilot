@@ -60,7 +60,7 @@ def test_matching_contract():
         ("profile-normalize-v1", NormalizedProfile),
         ("jd-requirements-v2", JobRequirements),
         ("matching-v1", Matching),
-        ("resume-generation-v1", ResumeDraft),
+        ("resume-generation-v2", ResumeDraft),
         ("resume-revision-agent-v1", ResumeRevisionProposal),
     ],
 )

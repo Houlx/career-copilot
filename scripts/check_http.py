@@ -189,7 +189,7 @@ def main():
                 assert len(backend.get(f"/api/jobs/{job['id']}/resumes").json()["resumes"]) == 1
                 nodes = backend.get(f"/api/debug/runs/{generated['run_id']}").json()["nodes"]
                 assert (
-                    len(nodes) == 7 and nodes[1]["ai"]["prompt_version"] == "resume-generation-v1"
+                    len(nodes) == 7 and nodes[1]["ai"]["prompt_version"] == "resume-generation-v2"
                 )
                 check_policies(nodes)
                 assert nodes[3]["validation_result"]["numeric_grounding_failure_count"] == 0

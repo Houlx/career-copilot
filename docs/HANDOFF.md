@@ -2,7 +2,15 @@
 
 更新日期：2026-10-10（Asia/Shanghai）
 
-## Current status — Phase 5 Resume Revision Agent
+## Current status — Resume generation v2
+
+- 根据用户提供的完整提示词升级为 `resume-generation-v2`，加强语义章节、内容密度、工作/项目去重、语言一致性、Evidence grounding 与内容/排版职责边界。
+- 现有 ResumeDraft contract 保持不变；提示词末尾明确字段映射、必填 headline/summary/至少一个内容章节，以及无 identity/contact 字段。章节省略规则适用于可选内容章节。当前 renderer 仅输出 Markdown，提示词中的 PDF 描述不代表已实现 PDF 导出。
+- 同步 workflow、API trace/debug replay、fake 路由、Settings policy、前端 Debug 选择、评估脚本和相关测试；high/6000 tokens 不变。旧简历、修订 schema、数据库无需迁移。历史阶段文档和 eval 结果保留 v1。
+- 新增六个 v2 replay 合成夹具，复用 v1 的人工构造输出与负例，用于版本路由/schema/grounding 回归；不是 v2 live 录制，不能证明提示词质量。v1 夹具原样保留，运行任务已切到 v2，无 v1 fallback。
+- 离线验证：450 backend tests、30 frontend tests、Resume 6/6 replay eval、Ruff check/format、frontend check/build 通过，live requests=0。新增 replay 版本隔离与前端 v2 payload 提交回归。真实模型的去重、章节选择、措辞、语言与不夸大 PARTIAL 仍需人工验收；数字与引用校验不证明语义蕴涵。重启后端后新生成任务应显示 v2/high/task。
+
+## Historical status — Phase 5 Resume Revision Agent
 
 **Phase 5 完成。Agent live requests = 0。完成提交后 STOP，不执行 live 或后续 Phase。**
 
