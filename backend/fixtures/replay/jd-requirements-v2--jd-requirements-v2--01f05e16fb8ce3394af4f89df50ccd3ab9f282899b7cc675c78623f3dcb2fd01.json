@@ -1,0 +1,14 @@
+{
+  "task": "jd-requirements-v2",
+  "prompt_version": "jd-requirements-v2",
+  "output": {
+    "title": "Synthetic scoreability",
+    "requirements": [
+      {
+        "text": "爱岗敬业",
+        "category": "personal_trait",
+        "importance": "required"
+      }
+    ]
+  }
+}

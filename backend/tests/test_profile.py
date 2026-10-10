@@ -71,7 +71,9 @@ def test_edit_preserves_raw_ai_and_requires_confirmation(client, monkeypatch):
     ai = profile["ai_normalized_profile"]
     edited = json.loads(json.dumps(profile["effective_profile"]))
     edited["entries"][0]["content"] = "使用 Python 编写脚本（用户补充）。"
-    monkeypatch.setattr(client.app.state.models.judge_model, "invoke", lambda *a: pytest.fail("AI"))
+    monkeypatch.setattr(
+        client.app.state.models.generation_model, "invoke", lambda *a: pytest.fail("AI")
+    )
     response = client.put("/api/profile", json={"expected_version": 3, "profile": edited})
     draft = response.json()["profile"]
     assert not draft["confirmed"] and draft["profile_version"] == 4
@@ -91,23 +93,27 @@ def test_edit_preserves_raw_ai_and_requires_confirmation(client, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "role,code",
+    "task,code",
     [
-        ("judge_model", ErrorCode.PROFILE_EXTRACTION_FAILED),
-        ("generation_model", ErrorCode.PROFILE_NORMALIZATION_FAILED),
-        ("judge_model", ErrorCode.MODEL_REQUEST_FAILED),
-        ("generation_model", ErrorCode.MODEL_OUTPUT_INVALID),
+        ("profile-facts-v1", ErrorCode.PROFILE_EXTRACTION_FAILED),
+        ("profile-normalize-v1", ErrorCode.PROFILE_NORMALIZATION_FAILED),
+        ("profile-facts-v1", ErrorCode.MODEL_REQUEST_FAILED),
+        ("profile-normalize-v1", ErrorCode.MODEL_OUTPUT_INVALID),
     ],
 )
-def test_failed_ai_preserves_confirmed_profile(client, monkeypatch, role, code):
+def test_failed_ai_preserves_confirmed_profile(client, monkeypatch, task, code):
     profile = confirm(client, normalize(client, save(client))["profile"])
 
+    original = client.app.state.models.generation_model.invoke
+
     def fail(*args):
+        if args[0] != task:
+            return original(*args)
         if code in {ErrorCode.PROFILE_EXTRACTION_FAILED, ErrorCode.PROFILE_NORMALIZATION_FAILED}:
             raise RuntimeError("private failure text")
         raise CopilotError(code)
 
-    monkeypatch.setattr(getattr(client.app.state.models, role), "invoke", fail)
+    monkeypatch.setattr(client.app.state.models.generation_model, "invoke", fail)
     response = client.post("/api/profile/normalize", json={"expected_version": 3})
     assert response.status_code == 500
     assert response.json()["error_code"] == code.value
@@ -207,7 +213,7 @@ def test_trace_metadata_and_hidden_payload(client):
         "persist_profile_draft",
     ]
     for index, role, version in [
-        (1, "judge", "profile-facts-v1"),
+        (1, "generation", "profile-facts-v1"),
         (3, "generation", "profile-normalize-v1"),
     ]:
         node = run["nodes"][index]
@@ -287,7 +293,7 @@ def test_invalid_replay_output(settings, tmp_path, schema, task):
     (tmp_path / replay_key(task, task, {})).write_text(
         json.dumps({"task": task, "prompt_version": task, "output": {"unexpected": "fact"}})
     )
-    role = "judge_model" if schema is ProfileFacts else "generation_model"
+    role = "generation_model"
     with pytest.raises(CopilotError) as error:
         getattr(ModelRouter(settings), role).invoke(task, {}, schema)
     assert error.value.code == ErrorCode.MODEL_OUTPUT_INVALID
@@ -305,10 +311,11 @@ def test_schema_disallows_extra_fields_and_wrong_types():
 @pytest.mark.parametrize("bad_output", ["quote", "index", "number", "type", "omission"])
 def test_grounding_validation_preserves_old_profile(client, monkeypatch, bad_output):
     old = confirm(client, normalize(client, save(client))["profile"])
+    original = client.app.state.models.generation_model.invoke
     if bad_output == "quote":
         facts = ProfileFacts.model_validate(CASES[0]["expected"])
         monkeypatch.setattr(
-            client.app.state.models.judge_model,
+            client.app.state.models.generation_model,
             "invoke",
             lambda *a: ModelResult(output=facts, metadata={}),
         )
@@ -326,7 +333,11 @@ def test_grounding_validation_preserves_old_profile(client, monkeypatch, bad_out
         monkeypatch.setattr(
             client.app.state.models.generation_model,
             "invoke",
-            lambda *a: ModelResult(output=output, metadata={}),
+            lambda *a: (
+                ModelResult(output=output, metadata={})
+                if a[0] == "profile-normalize-v1"
+                else original(*a)
+            ),
         )
     response = client.post("/api/profile/normalize", json={"expected_version": 3})
     assert response.json()["error_code"] == "PROFILE_VALIDATION_FAILED"
@@ -344,7 +355,8 @@ def test_optimistic_concurrency_prevents_lost_updates(client, monkeypatch):
     original = client.app.state.models.generation_model.invoke
 
     def concurrent_edit(*args):
-        save(client, "new input", 1)
+        if args[0] == "profile-normalize-v1":
+            save(client, "new input", 1)
         return original(*args)
 
     monkeypatch.setattr(client.app.state.models.generation_model, "invoke", concurrent_edit)
@@ -390,10 +402,15 @@ def test_draft_persistence_failure_preserves_previous_confirmed(client):
 def test_confirm_multiple_evidence_rolls_back_partial_insert(client, monkeypatch):
     facts = {"facts": [CASES[0]["expected"]["facts"][0], CASES[1]["expected"]["facts"][0]]}
     raw = "\n".join(f["source_quote"] for f in facts["facts"])
+    original = client.app.state.models.generation_model.invoke
     monkeypatch.setattr(
-        client.app.state.models.judge_model,
+        client.app.state.models.generation_model,
         "invoke",
-        lambda *a: ModelResult(output=ProfileFacts.model_validate(facts), metadata={}),
+        lambda *a: (
+            ModelResult(output=ProfileFacts.model_validate(facts), metadata={})
+            if a[0] == "profile-facts-v1"
+            else original(*a)
+        ),
     )
     draft = normalize(client, save(client, raw))["profile"]
     with client.app.state.db.connect() as conn:
@@ -420,7 +437,8 @@ def test_mock_profile_provider_roles_grounding_and_usage(settings, monkeypatch):
     def provider(request):
         body = json.loads(request.content)
         requests.append(body)
-        if body["model"] == "test-judge":
+        assert body["model"] == "test-generation"
+        if body["response_format"]["json_schema"]["name"] == "ProfileFacts":
             assert json.loads(body["messages"][1]["content"]) == {
                 "raw_input": CASES[3]["raw_input"]
             }
@@ -456,7 +474,7 @@ def test_mock_profile_provider_roles_grounding_and_usage(settings, monkeypatch):
         result = normalize(client, save(client))
         nodes = client.get("/api/debug/runs/" + result["run_id"]).json()["nodes"]
         assert len(requests) == 2
-        for index, name in [(1, "test-judge"), (3, "test-generation")]:
+        for index, name in [(1, "test-generation"), (3, "test-generation")]:
             assert nodes[index]["ai"]["model_name"] == name
             assert nodes[index]["ai"]["provider"] == "openai-compatible"
             assert nodes[index]["ai"]["total_tokens"] == 30

@@ -1,0 +1,14 @@
+{
+  "task": "jd-requirements-v2",
+  "prompt_version": "jd-requirements-v2",
+  "output": {
+    "title": "Synthetic role 3",
+    "requirements": [
+      {
+        "text": "本科及以上学历",
+        "importance": "required",
+        "category": "education"
+      }
+    ]
+  }
+}

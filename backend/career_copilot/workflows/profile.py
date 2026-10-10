@@ -29,7 +29,7 @@ def build_profile_graph(trace: RunTrace, store: ProfileStore, models: ModelRoute
         return {"raw_input": profile["raw_input"]}
 
     def extract(state):
-        result = models.judge_model.invoke(
+        result = models.generation_model.invoke(
             "profile-facts-v1", {"raw_input": state["raw_input"]}, ProfileFacts
         )
         return {"facts": result.output.model_dump()}

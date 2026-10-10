@@ -4,22 +4,24 @@
 
 ## Status
 
-**最新：Phase 3.5B 未完成，阻塞于 Step A。** 2026-10-10 核对 Jev 官方 native API 后，公开的 Noul/Choice/Score 无法直接表达现有开放文本 extraction contract。仅更新阻塞文档，未实现 mapping/CLI、未跑 benchmark，本次真实 requests=0，未重跑测试。需要开放文本/数组提取接口资料或明确调整任务分工/候选提取范围后再继续。详见 [PHASE_3_5B.md](PHASE_3_5B.md)。以下 3.5A 完成状态和 stop 指令为历史记录，本次获授权推进 3.5B，不代表已完成。未开始 Phase 4。
+**最新：Phase 3.5B-R 职责重构及离线回归完成，live 验收未完成。已在 live Step 1 失败后停止。提交并确认 clean 后 STOP；未开始 Phase 4。**
 
-**Phase 3.5A — Live Provider Validation 已完成。提交并确认 clean 后 STOP。未开始 3.5B 或 Phase 4。**
+Generation/GLM：profile-facts-v1（只改 role）、profile-normalize-v1、jd-requirements-v2、matching-v1。Judge/Jev：scoreability-v1。Job graph 为 job-analysis-v2，新增 classify_scoreability，九节点；Jev 一个请求批量 Choice，Python 完整映射校验后继续原有最小 guard。Report/DB/frontend contract、Coverage、全量 Evidence matching 不变。旧 jd-extract-v1 与历史 replay 保留。
 
-Phase 3.5A：新增 Jev native decision adapter 与 Generation OpenAI-compatible adapter、role provider 配置、两个 diagnostic tasks、双重 live gate、一次请求 smoke、复用 trace（含 usage/provider metadata）。自动测试禁 TCP。本阶段检查全部通过：后端 153 passed（新增 42）、前端 16 passed、Ruff/format/check/build/audit（0 vulnerabilities）、两个离线 eval。本次按 Judge → Generation 顺序完成各一次真实 synthetic smoke（共 2 次，无重试）：jev-1.13.0，750.411 ms，tokens 283/21/304；glm-5.3-flash，1085.165 ms，tokens 41/63/104。两份 trace 已核对 structured output、metadata 与 secret 脱敏。本地 AI_DEBUG_PAYLOADS 已恢复 0。详情见 [PHASE_3_5A.md](PHASE_3_5A.md)。不再执行 live 请求；提交、检查 clean 后 STOP。
+完整 regression 全通过：后端 **189 passed**、前端 **16 passed**、Ruff/format、check/build/audit（0 vulnerabilities）、Profile/Jobs 离线 eval，自动验证 **0 live requests**。新 raw/guarded scoreability replay 均 8/8；这是 fixture 回归分数。
 
-独立项目；Phase 1 骨架/Observability、Phase 2 Career Profile 全部保留。当前支持确认 Profile → 显式分析 JD → Judge requirements → Generation 全量 Evidence matching → Python validation/Coverage → 原子报告 → UI Evidence 和 outdated。
+本阶段真实请求 **1 次**，无重试：GLM `glm-5.3-flash`，synthetic Profile education case，HTTP 成功但严格输出校验失败 `MODEL_OUTPUT_INVALID`；3878.029 ms，tokens 113/243/356。按照用户规定“Step 1 失败 → STOP”，没有执行 JD extraction、Jev 单 case 或 8-case benchmark；Jev live 质量/latency/tokens 暂无数据。没有 prompt tuning、真实用户数据或真实业务 graph。详见 [PHASE_3_5B_R.md](PHASE_3_5B_R.md) 和 [脱敏结果](../evals/results/phase_3_5b_r/profile-live.json)。失败正文未保留，具体字段原因未知。
+
+下一阶段需明确授权调查 GLM 结构化输出失败并重新确认 live 请求预算；不要自动重试或启动 Phase 4。原 [PHASE_3_5B.md](PHASE_3_5B.md) 作为 Jev 开放文本 extraction 能力阻塞记录保留。历史 Phase 3.5A diagnostic 两次成功仅证明 wire smoke，不能替代业务验收。
 
 ## Read first next session
 
-1. 本文。
-2. `docs/PHASE_3_5B.md`：先解决 Step A 能力阻塞，不把 diagnostic 验证当业务 extraction 验证。
+1. 本文及 `docs/PHASE_3_5B_R.md`。
+2. `docs/PHASE_3_5B.md`：历史接口能力发现。
 3. `docs/PHASE_3_5A.md`、`docs/PHASE_3.md`、`docs/ARCHITECTURE.md`；Profile 规则见 `docs/PHASE_2.md`。
-4. 按获授权阶段定向阅读代码，不重新全仓库审计。
+4. 按获授权阶段定向读代码，不重新全仓库审计。
 
-未收到明确指令不要继续 Phase 4 Resume。
+以下 Phase 3 交付/验证为历史记录；当前模型职责和 workflow 以上文及 3.5B-R 为准。
 
 ## Delivered in Phase 3
 
@@ -92,4 +94,4 @@ npm --prefix frontend run dev
 
 ## Commit / stop
 
-commit hash 用 `git log -1 --oneline` 获取，避免将自身 commit hash 写入文档。Phase 3.5A 必须两个真实 synthetic smoke 成功后才提交；确认 working tree clean，STOP。不要开始 3.5B / Phase 4。
+commit hash 用 `git log -1 --oneline` 获取，避免将自身 hash 写入文档。本轮记录 Step 1 失败及未完成验收，提交已验证实现与文档、确认 working tree clean 后 STOP。不要自动补发 live 请求，不开始 Phase 4。

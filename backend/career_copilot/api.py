@@ -9,7 +9,7 @@ from .config import Settings
 from .database import Database
 from .errors import CopilotError, ErrorCode, WorkflowError
 from .job_store import JobStore
-from .models.jobs import JobExtraction, Matching
+from .models.jobs import JobExtraction, JobRequirements, Matching, ScoreabilityResult
 from .models.profile import NormalizedProfile, ProfileFacts
 from .models.prompts import PROMPTS, DiagnosticResult
 from .models.router import ModelRouter
@@ -158,7 +158,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def analyze_job(body: AnalyzeJobRequest):
         if not body.raw_jd.strip():
             raise HTTPException(status_code=422, detail="JD cannot be blank")
-        trace = RunTrace(db, settings, "job_analysis_workflow", "job-analysis-v1")
+        trace = RunTrace(db, settings, "job_analysis_workflow", "job-analysis-v2")
         state = trace.execute(
             build_job_graph(trace, profiles, jobs, router), {"raw_jd": body.raw_jd}
         )
@@ -201,10 +201,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def replay_node(body: ReplayRequest):
         # Forced replay: independent execution without business or trace writes.
         tasks = {
+            "jd-requirements-v2": ("generation_model", JobRequirements),
+            "scoreability-v1": ("judge_model", ScoreabilityResult),
             "jd-extract-v1": ("judge_model", JobExtraction),
             "matching-v1": ("generation_model", Matching),
             "diagnostic": ("judge_model", DiagnosticResult),
-            "profile-facts-v1": ("judge_model", ProfileFacts),
+            "profile-facts-v1": ("generation_model", ProfileFacts),
             "profile-normalize-v1": ("generation_model", NormalizedProfile),
         }
         if body.task not in tasks:

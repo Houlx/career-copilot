@@ -1,0 +1,14 @@
+{
+  "task": "jd-requirements-v2",
+  "prompt_version": "jd-requirements-v2",
+  "output": {
+    "title": "Synthetic scoreability",
+    "requirements": [
+      {
+        "text": "接受搬迁",
+        "category": "logistics",
+        "importance": "required"
+      }
+    ]
+  }
+}

@@ -103,9 +103,10 @@ def main():
             assert job["requirements"][0]["match"]["evidence"][0]["normalized_content"]
             assert backend.get(f"/api/jobs/{job['id']}").json()["job"] == job
             nodes = backend.get(f"/api/debug/runs/{result['run_id']}").json()["nodes"]
-            assert len(nodes) == 8
-            assert nodes[1]["ai"]["prompt_version"] == "jd-extract-v1"
-            assert nodes[4]["ai"]["prompt_version"] == "matching-v1"
+            assert len(nodes) == 9
+            assert nodes[1]["ai"]["prompt_version"] == "jd-requirements-v2"
+            assert nodes[3]["ai"]["prompt_version"] == "scoreability-v1"
+            assert nodes[5]["ai"]["prompt_version"] == "matching-v1"
             before = backend.get("/api/debug/runs").json()
             for task, payload in [
                 ("jd-extract-v1", {"raw_jd": "Synthetic Python developer. Python required."}),

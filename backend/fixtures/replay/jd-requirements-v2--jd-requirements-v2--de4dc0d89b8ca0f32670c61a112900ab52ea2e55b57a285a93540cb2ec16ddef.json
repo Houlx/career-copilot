@@ -1,0 +1,14 @@
+{
+  "task": "jd-requirements-v2",
+  "prompt_version": "jd-requirements-v2",
+  "output": {
+    "title": "Synthetic role 7",
+    "requirements": [
+      {
+        "text": "责任心强",
+        "importance": "required",
+        "category": "personal_trait"
+      }
+    ]
+  }
+}

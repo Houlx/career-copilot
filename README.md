@@ -1,8 +1,8 @@
 # Career Copilot
 
-独立的、面向个人求职的 Workflow-first AI 应用。当前完成 **Phase 3.5A：Live Provider Validation**；保留 Phase 3 Job Analysis，Jev / GLM synthetic smoke 均成功。没有复制或读取 Waku 项目代码；简历生成留待 Phase 4。
+独立的、面向个人求职的 Workflow-first AI 应用。当前 **Phase 3.5B-R 职责重构及离线回归已完成，live 验收未完成**：GLM Profile facts 单 case 返回 MODEL_OUTPUT_INVALID，按停止条件未执行后续 JD/Jev 请求。未开始 Phase 4。
 
-Phase 3.5B 当前阻塞于 Jev 原生接口与开放文本 extraction contract 的能力差异，尚未实现业务 mapping 或执行 live benchmark；本次 live requests 为 0。证据与继续条件见 [PHASE_3_5B.md](docs/PHASE_3_5B.md)。
+Generation/GLM 负责 Profile facts、normalization、JD requirements 和 matching；Judge/Jev 只负责有限候选上的 scoreability。结果和指标见 [PHASE_3_5B_R.md](docs/PHASE_3_5B_R.md)。原 Jev 开放文本 extraction 的失败探索保留在 [PHASE_3_5B.md](docs/PHASE_3_5B.md)。
 
 ## 本地启动
 
@@ -32,11 +32,11 @@ npm --prefix frontend run dev
 
 ## 已实现
 
-- Jobs 输入、历史、详情；八节点固定 Job Analysis 图，全部 active Evidence 匹配、严格引用校验、Python Coverage、原子保存和 outdated。
+- Jobs 输入、历史、详情；九节点固定 Job Analysis 图，全部 active Evidence 匹配、严格引用校验、Python Coverage、原子保存和 outdated。
 
 - React + TypeScript + Vite：Profile 输入、整理、编辑、确认、失败反馈；概览、Settings、Debug Runs。
 - 原始资料历史、AI 原始版本、用户版本分开保存；显式确认事务生成稳定 Evidence ID，版本检查拒绝旧请求覆盖。
-- 六节点 Profile LangGraph，Judge 提取事实，Generation 仅使用 Judge facts 整理。
+- 六节点 Profile LangGraph，Generation 提取事实并仅使用已验证 facts 整理。
 - FastAPI → 真实 LangGraph StateGraph → 两个确定性节点 → 状态变更 → SQLite Trace → HTTP response。
 - 独立 Judge / Generation 配置，支持共享配置回退；业务节点不读取环境变量。
 - `fake` / `replay` / 显式 `live` Provider 层，Pydantic 输出校验，OpenAI-compatible Chat Completions JSON Schema 输出，失败最多重试一次。
@@ -66,7 +66,8 @@ backend/
   fixtures/replay/          # synthetic diagnostic / Profile fixtures
   tests/                    # 默认阻断 TCP sockets
 scripts/check_http.py       # 实际本地 HTTP 集成检查
-scripts/eval_profile.py     # 离线 replay eval
+scripts/eval_profile.py     # 默认离线 replay，显式单 case live gate
+scripts/eval_jobs.py        # JD / scoreability / matching synthetic eval
 evals/profile_extraction/   # 10 个 synthetic reviewed cases
 frontend/
   src/                      # React shell、API 类型、交互测试、样式
@@ -119,10 +120,10 @@ uv run python scripts/check_http.py
 - 默认 `AI_MODE=fake`：执行 deterministic diagnostic；Profile 把原文保留为一条 other fact，再逐条原样整理，用于流程检查，不模拟模型提取质量。
 - `AI_MODE=replay`：从 `REPLAY_DIR` 读取合法 fixture，缺少记录明确报错，不自动回退 live。
 - `AI_MODE=live`：启用真实 Provider。启动时检查两个角色的 model/key/base URL 配置。
-- Provider：`JUDGE_PROVIDER=jev`、`GENERATION_PROVIDER=openai_compatible`；未显式配置 provider 时保留 OpenAI-compatible 兼容默认。Jev 当前仅支持 diagnostic，业务映射留待 3.5B。
+- Provider：`JUDGE_PROVIDER=jev`、`GENERATION_PROVIDER=openai_compatible`；未显式配置 provider 时保留 OpenAI-compatible 兼容默认。Jev 支持 diagnostic 和批量 native Choice scoreability，不支持开放文本 extraction。
 - OpenAI-compatible 角色覆盖：`JUDGE_MODEL / JUDGE_BASE_URL / JUDGE_API_KEY` 与 `GENERATION_MODEL / GENERATION_BASE_URL / GENERATION_API_KEY`；未配置时回退 `MODEL / BASE_URL / API_KEY`。
 - Jev 必须配置专用 `JUDGE_MODEL / JUDGE_BASE_URL / JUDGE_API_KEY`，不回退共享配置；base URL 包含 version（不含 `/systemone`），model ID 不硬编码。
-- 新增 `judge-diagnostic-v1` / `generation-diagnostic-v1`（各 128 output tokens），只使用 synthetic 输入。原可执行 AI tasks：`diagnostic`（prompt `diagnostic-v1`，128 tokens）、`profile-facts-v1`（Judge）及 `profile-normalize-v1`（Generation，各 6000 output tokens）；temperature=0。
+- 新增 `judge-diagnostic-v1` / `generation-diagnostic-v1`（各 128 output tokens），只使用 synthetic 输入。原可执行 AI tasks：`diagnostic`（prompt `diagnostic-v1`，128 tokens）、`profile-facts-v1`（Generation）及 `profile-normalize-v1`（Generation，各 6000 output tokens）；temperature=0。
 - `.env`、数据库、个人信息和 secret 不提交 Git。Settings 不返回 secret 或 provider URL。
 
 独立 replay：
@@ -142,7 +143,7 @@ AI_MODE=live uv run python -m career_copilot.smoke --live --role judge
 AI_MODE=live uv run python -m career_copilot.smoke --live --role generation
 ```
 
-每条 smoke 仅一次请求，固定 synthetic 输入，保存 diagnostic trace，不读取或写入 Career 业务表，不执行业务 graph。缺任一 live gate 不构造 client。Generation 保留 `json_schema` structured output；Jev 使用原生 state/questions API。常规模型调用仍最多两次尝试，无嵌套重试、fallback 或 repair。默认 `AI_DEBUG_PAYLOADS=0`；本地开启检查后建议恢复。真实结果和限制见 [PHASE_3_5A.md](docs/PHASE_3_5A.md)；本次 Judge `jev-1.13.0` / Generation `glm-5.3-flash` 各一次成功，latency 750.411 / 1085.165 ms，tokens 283+21 / 41+63；真实请求总数为 2，未执行真实业务 workflow。
+每条 smoke 仅一次请求，固定 synthetic 输入，保存 diagnostic trace，不读取或写入 Career 业务表，不执行业务 graph。缺任一 live gate 不构造 client。Generation 保留 `json_schema` structured output；Jev 使用原生 state/questions API。常规模型调用仍最多两次尝试，无嵌套重试、fallback 或 repair。默认 `AI_DEBUG_PAYLOADS=0`；本地开启检查后建议恢复。真实结果和限制见 [PHASE_3_5A.md](docs/PHASE_3_5A.md)；Phase 3.5A Judge `jev-1.13.0` / Generation `glm-5.3-flash` 各一次成功，latency 750.411 / 1085.165 ms，tokens 283+21 / 41+63；该历史阶段真实请求总数为 2，未执行真实业务 workflow；本轮 3.5B-R 另有 1 次失败的业务 task 验证，详见新阶段记录。
 
 ## Profile 边界与评估
 
@@ -156,7 +157,7 @@ uv run python scripts/eval_profile.py --predictions /path/to/predictions.json
 
 10 个 synthetic reviewed cases 覆盖教育、工作、项目、技能、数字、中英混合、缺失信息及模糊表述。默认 replay 对比是回归验证，不代表 live 模型质量。事实完整性仍需用户审阅；数值、source quote 和引用校验不能证明所有语义均有来源。详细规则见 [docs/PHASE_2.md](docs/PHASE_2.md)。
 
-Phase 3 新增 Judge `jd-extract-v1` 与 Generation `matching-v1`（各 6000 output tokens、temperature=0），均支持独立 offline replay。`uv run python scripts/eval_jobs.py` 运行 12 个抽取、8 个 scoreability、5 个 matching reviewed synthetic fixtures；可传 `--predictions`。规则、Coverage 公式、trace、已知限制见 [docs/PHASE_3.md](docs/PHASE_3.md)。
+当前使用 Generation `jd-requirements-v2`、Judge `scoreability-v1` 和 Generation `matching-v1`（各 6000 output tokens、temperature=0），均支持独立 offline replay；历史 `jd-extract-v1` 保留原语义。`uv run python scripts/eval_jobs.py` 运行 12 个抽取、8 个 scoreability、5 个 matching reviewed synthetic fixtures；可传 `--predictions`。新增 `--suite scoreability` / `--case` / `--output`；live 需要 `AI_MODE=live` + `--live`，单次尝试，8-case 分类仅一个批量请求。本次在 Profile live Step 1 失败后停止，不自动重跑。规则、Coverage 公式、trace、已知限制见 [docs/PHASE_3.md](docs/PHASE_3.md)。
 
 ## 检查
 

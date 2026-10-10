@@ -1,0 +1,14 @@
+{
+  "task": "jd-requirements-v2",
+  "prompt_version": "jd-requirements-v2",
+  "output": {
+    "title": "Synthetic role 9",
+    "requirements": [
+      {
+        "text": "硕士优先，本科需三年经验",
+        "importance": "required",
+        "category": "education"
+      }
+    ]
+  }
+}

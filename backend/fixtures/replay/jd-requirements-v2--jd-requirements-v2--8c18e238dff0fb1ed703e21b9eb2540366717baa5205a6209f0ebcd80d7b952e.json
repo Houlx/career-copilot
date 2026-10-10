@@ -1,0 +1,14 @@
+{
+  "task": "jd-requirements-v2",
+  "prompt_version": "jd-requirements-v2",
+  "output": {
+    "title": "Synthetic Python developer",
+    "requirements": [
+      {
+        "text": "Python",
+        "category": "skill",
+        "importance": "required"
+      }
+    ]
+  }
+}

@@ -9,7 +9,7 @@ from career_copilot.api import create_app
 from career_copilot.config import Settings
 from career_copilot.database import Database
 from career_copilot.errors import CopilotError, ErrorCode
-from career_copilot.models.profile import ProfileFacts
+from career_copilot.models.jobs import JobExtraction
 from career_copilot.models.prompts import DiagnosticResult, JudgeDiagnosticResult
 from career_copilot.models.router import ModelRouter, replay_key
 from career_copilot.smoke import main, run_smoke
@@ -263,7 +263,7 @@ def test_jev_business_mapping_deferred_without_http(live_settings, monkeypatch):
     monkeypatch.setattr(httpx, "Client", forbidden)
     with pytest.raises(CopilotError) as error:
         ModelRouter(live_settings).judge_model.invoke(
-            "profile-facts-v1", {"raw_input": "private input"}, ProfileFacts
+            "jd-extract-v1", {"raw_jd": "private input"}, JobExtraction
         )
     assert error.value.code == ErrorCode.MODEL_OUTPUT_INVALID
 

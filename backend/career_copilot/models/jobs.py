@@ -11,7 +11,10 @@ class Strict(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
 
-class Requirement(Strict):
+Scoreability = Literal["SCORED", "NEEDS_CONFIRMATION", "NON_SCORABLE"]
+
+
+class ExtractedRequirement(Strict):
     text: str = Field(min_length=1, max_length=4000)
     importance: Literal["required", "preferred"]
     category: Literal[
@@ -25,12 +28,64 @@ class Requirement(Strict):
         "personal_trait",
         "other",
     ]
-    scoreability: Literal["SCORED", "NEEDS_CONFIRMATION", "NON_SCORABLE"]
+
+
+class Requirement(ExtractedRequirement):
+    scoreability: Scoreability
 
 
 class JobExtraction(Strict):
     title: str = Field(min_length=1, max_length=300)
     requirements: list[Requirement] = Field(max_length=100)
+
+
+class JobRequirements(Strict):
+    title: str = Field(min_length=1, max_length=300)
+    requirements: list[ExtractedRequirement] = Field(max_length=100)
+
+
+class ScoreabilityInput(Strict):
+    requirements: list[ExtractedRequirement] = Field(max_length=100)
+
+
+class ScoreabilityAnswer(Strict):
+    requirement_index: int = Field(ge=0)
+    scoreability: Scoreability
+
+
+class ScoreabilityResult(Strict):
+    classifications: list[ScoreabilityAnswer] = Field(max_length=100)
+
+
+def apply_classifications(requirements: list[dict], result: ScoreabilityResult) -> list[dict]:
+    indices = [answer.requirement_index for answer in result.classifications]
+    if len(indices) != len(requirements) or set(indices) != set(range(len(requirements))):
+        raise CopilotError(ErrorCode.SCOREABILITY_FAILED)
+    labels = {answer.requirement_index: answer.scoreability for answer in result.classifications}
+    return [
+        Requirement.model_validate({**r, "scoreability": labels[i]}).model_dump()
+        for i, r in enumerate(requirements)
+    ]
+
+
+def fake_scoreability(payload: dict) -> dict:
+    # Synthetic demo only. Keep this separate from the unchanged production safety guard.
+    requirements = ScoreabilityInput.model_validate(payload).requirements
+    return {
+        "classifications": [
+            {
+                "requirement_index": i,
+                "scoreability": (
+                    "NON_SCORABLE"
+                    if r.category == "personal_trait"
+                    else "NEEDS_CONFIRMATION"
+                    if r.category == "logistics"
+                    else "SCORED"
+                ),
+            }
+            for i, r in enumerate(requirements)
+        ]
+    }
 
 
 class Match(Strict):

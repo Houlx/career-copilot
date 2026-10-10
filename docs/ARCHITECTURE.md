@@ -13,7 +13,7 @@ flowchart TD
     Router --> Generation[Generation role]
     Judge --> Offline[Fake / Replay]
     Generation --> Offline
-    Judge --> Jev[Jev decision adapter - diagnostic only]
+    Judge --> Jev[Jev native Choice scoreability / Noul diagnostic]
     Judge --> Compatible[OpenAI-compatible adapter]
     Generation --> Compatible
     Graph --> Trace[RunTrace node wrappers]
@@ -23,13 +23,13 @@ flowchart TD
 
 Phase 1 的 dummy graph 只有固定边：`START → prepare_input → mutate_state → END`。它只证明工作流和追踪闭环，不承担 Career Profile 功能。ModelRouter 独立构建，其网络分支不会被 dummy graph 使用。Phase 2 新增独立 `profile_workflow`，固定 load → extract → validate facts → normalize → validate profile → persist。确认是独立 Python/API 事务，不在 AI Graph 内。
 
-Phase 3 已增加独立八节点 Job Analysis graph，确认门禁 → Judge extraction → validation/guard → 全量证据 Generation matching → validation → Python Coverage → 原子保存；后续增加 Resume Generation graph。用户确认和显式生成简历的授权边界由 API/Python 检查。不存在 Agent loop、ToolRegistry、模型动态选边、MCP、RAG、embedding、auth 或多用户设计。
+Phase 3.5B-R 的独立九节点 Job Analysis graph：确认门禁 → Generation extraction → validation → Jev scoreability → Python guard → 全量证据 Generation matching → validation → Python Coverage → 原子保存；后续增加 Resume Generation graph。用户确认和显式生成简历的授权边界由 API/Python 检查。不存在 Agent loop、ToolRegistry、模型动态选边、MCP、RAG、embedding、auth 或多用户设计。
 
 ## State and persistence
 
 `CareerState` 当前只有 message / counter / result。节点返回部分更新，LangGraph 合并状态；不维护聊天历史，也不提前加入空业务字段。
 
-SQLite schema v3 保留 `workflow_runs` 与 `node_traces`，增加单例 `career_profile` 与 `career_evidence`，以及 `jobs` / `job_requirements` / `job_matches`。Job 保存时事务内复查确认及版本，全部要求、匹配、Coverage 原子发布；历史引用保留 Evidence，读取时动态计算 outdated。Profile 原文及原文历史、Judge facts、AI 原始整理、用户编辑、上次确认快照分别保留；确认与 Evidence 更新在一个 `BEGIN IMMEDIATE` 事务中完成。所有写操作携带 expected_version，工作流最后写回再次检查，避免旧结果覆盖新内容。普通读事务保证 Profile/Evidence 同一快照。每次写入均在独立事务中提交，开启 WAL、foreign keys、10 秒 busy timeout。每个 workflow 请求创建独立 RunTrace，UUID run_id，节点 sequence 从 1 开始。没有全局共享执行状态。
+SQLite schema v3 保留 `workflow_runs` 与 `node_traces`，增加单例 `career_profile` 与 `career_evidence`，以及 `jobs` / `job_requirements` / `job_matches`。Job 保存时事务内复查确认及版本，全部要求、匹配、Coverage 原子发布；历史引用保留 Evidence，读取时动态计算 outdated。Profile 原文及原文历史、Generation facts、AI 原始整理、用户编辑、上次确认快照分别保留；确认与 Evidence 更新在一个 `BEGIN IMMEDIATE` 事务中完成。所有写操作携带 expected_version，工作流最后写回再次检查，避免旧结果覆盖新内容。普通读事务保证 Profile/Evidence 同一快照。每次写入均在独立事务中提交，开启 WAL、foreign keys、10 秒 busy timeout。每个 workflow 请求创建独立 RunTrace，UUID run_id，节点 sequence 从 1 开始。没有全局共享执行状态。
 
 `node_traces` 使用 `(run_id, sequence)` 主键及 run foreign key；具体 trace 为 JSON，允许后续添加 metadata 而不先建立大量空列。时间保存 UTC ISO 8601，耗时使用 monotonic performance counter。UI 列表以 Asia/Shanghai 展示时间。
 
@@ -53,17 +53,31 @@ Debug API 仅 development 可用，production/test 均返回 404。这不是 aut
 
 ## Provider and prompt boundary
 
-Phase 3.5B 能力核对：Jev 公开 native questions 为 Noul/Choice/Score，不能直接生成现有 ProfileFacts/JobExtraction 所需的任意文本及动态数组。业务 mapping 尚未实现；当前 Jev 仍仅 diagnostic。引入候选提取或其他生成模型会改变现有任务分工，须先明确调整范围。详见 [PHASE_3_5B.md](PHASE_3_5B.md)。
+Phase 3.5B 核对发现 Jev 的 Noul/Choice/Score 不能生成开放文本及动态数组，历史失败记录保留于 [PHASE_3_5B.md](PHASE_3_5B.md)。Phase 3.5B-R 据此调整模型职责：
+
+```text
+Generation / GLM
+├─ profile-facts-v1
+├─ profile-normalize-v1
+├─ jd-requirements-v2 (text / importance / category)
+└─ matching-v1
+Judge / Jev
+└─ scoreability-v1 (finite native Choice)
+Python
+└─ requirement IDs / validation / minimal safety guard / evidence / coverage
+```
+
+只拆分 scoreability，不迁移其他判断。实现与离线回归完成，但 GLM Profile live Step 1 结构化输出失败后停止；后续 live 未执行，详见 [PHASE_3_5B_R.md](PHASE_3_5B_R.md)。
 
 Settings 在应用构造时加载一次，角色专用配置优先，共享配置回退。Node 仅接受注入的依赖，不直接读取环境变量。
 
-每个可执行 task 有 PromptSpec：版本、角色、prompt、输出上限、温度。已实现 diagnostic-v1、profile-facts-v1、profile-normalize-v1、jd-extract-v1、matching-v1，Pydantic strict 输出 schema 禁止额外字段。Judge 仅从 raw 提取事实并保留连续原文 quote；Generation 仅接收 facts，输出恰好一条 entry 对应一个 source_index，校验类型和数字保留。用户编辑有独立来源标记，不覆盖 raw/AI 版本。不扩展为工具注册驱动的流程。
+每个可执行 task 有 PromptSpec：版本、角色、prompt、输出上限、温度。已实现 diagnostic-v1、profile-facts-v1、profile-normalize-v1、jd-requirements-v2、scoreability-v1、matching-v1（历史 jd-extract-v1 保留），Pydantic strict 输出 schema 禁止额外字段。Generation 从 raw 提取事实并保留连续原文 quote；Generation 仅接收 facts，输出恰好一条 entry 对应一个 source_index，校验类型和数字保留。用户编辑有独立来源标记，不覆盖 raw/AI 版本。不扩展为工具注册驱动的流程。
 
-live 按 role provider 配置选择专用 adapter：Jev POST `/systemone`（state/questions），OpenAI-compatible POST `/chat/completions`（`json_schema` structured output）。默认 fake/replay 不构造网络 adapter/client。Jev 仅支持新 `judge-diagnostic-v1`，业务 task 在发送输入前明确拒绝；四个既有业务 prompt/schema/workflow 不变，Jev 业务映射留待 3.5B。新增 `generation-diagnostic-v1` 使用既有 Generation contract。客户端 30 秒 timeout，不跟随 redirect；最多两次尝试，无嵌套 SDK 重试，无 repair 对话。HTTP/网络错误是 MODEL_REQUEST_FAILED，结构/校验错误是 MODEL_OUTPUT_INVALID。未来业务节点的特定错误分类已列入 ErrorCode。
+live 按 role provider 配置选择专用 adapter：Jev POST `/systemone`（state/questions），OpenAI-compatible POST `/chat/completions`（`json_schema` structured output）。默认 fake/replay 不构造网络 adapter/client。Jev 支持 `judge-diagnostic-v1` 和 `scoreability-v1`，其余 task 在发送输入前拒绝。scoreability 一份 state 下按 requirement index 批量建 Choice questions，原生 response 在 provider 层转换为 ScoreabilityResult。Python 验证完整唯一映射，workflow 再执行原有 safety guard。Profile facts 仅换 role，旧 JD v1 不修改，业务 extraction 使用 v2。新增 `generation-diagnostic-v1` 使用既有 Generation contract。客户端 30 秒 timeout，不跟随 redirect；最多两次尝试，无嵌套 SDK 重试，无 repair 对话。HTTP/网络错误是 MODEL_REQUEST_FAILED，结构/校验错误是 MODEL_OUTPUT_INVALID。未来业务节点的特定错误分类已列入 ErrorCode。
 
 独立 smoke 要求 AI_MODE=live + --live + --role，固定 synthetic 输入，严格一次尝试（不使用常规重试预算）。复用 RunTrace 记录 diagnostic run/node，不调用业务 graph/store，不读写业务表。Jev 已知 response_model/probability/request id 放现有 provider_metadata JSON，继续脱敏，无 schema migration。细节、真实验证状态见 [PHASE_3_5A.md](PHASE_3_5A.md)。
 
-replay 使用 task + prompt_version + 输入 canonical hash 选择明确 fixture。不存在记录、版本不匹配、非法 schema 均明确失败，不调用 live。独立 replay API 固定 replay 模式，即使主服务为 live，仍然不会进行网络请求。replay 不修改业务数据、runs 或 trace。
+replay 使用 task + prompt_version + 输入 canonical hash 选择明确 fixture。不存在记录、版本不匹配、非法 schema 均明确失败，不调用 live。两个新 tasks 同样支持 fake/replay，Debug UI 保留历史 tasks 并增加新 tasks。独立 synthetic eval 默认强制 replay，live 双 gate 且无重试；scoreability 8-case 批量一个请求，分别记录 raw/guarded accuracy。Eval 不运行业务 graph，也不打开 SQLite。独立 replay API 固定 replay 模式，即使主服务为 live，仍然不会进行网络请求。replay 不修改业务数据、runs 或 trace。
 
 ## Extension boundaries
 

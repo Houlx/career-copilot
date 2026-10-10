@@ -197,33 +197,35 @@ function DebugRuns({ path, go }: { path: string; go: (path: string) => void }) {
         source_quote: '使用 Python。',
       };
       const payload =
-        replayTask === 'jd-extract-v1'
+        replayTask === 'jd-extract-v1' || replayTask === 'jd-requirements-v2'
           ? { raw_jd: 'Synthetic Python developer. Python required.' }
-          : replayTask === 'matching-v1'
-            ? {
-                requirements: [
-                  {
-                    requirement_index: 0,
-                    text: 'Python',
-                    importance: 'required',
-                    category: 'skill',
-                    scoreability: 'SCORED',
-                  },
-                ],
-                evidence: [
-                  {
-                    id: 'synthetic-python',
-                    type: 'skill',
-                    title: 'Python',
-                    normalized_content: 'Python',
-                  },
-                ],
-              }
-            : replayTask === 'profile-facts-v1'
-              ? { raw_input: '使用 Python。' }
-              : replayTask === 'profile-normalize-v1'
-                ? { facts: [fact] }
-                : {};
+          : replayTask === 'scoreability-v1'
+            ? { requirements: [{ text: 'Python', importance: 'required', category: 'skill' }] }
+            : replayTask === 'matching-v1'
+              ? {
+                  requirements: [
+                    {
+                      requirement_index: 0,
+                      text: 'Python',
+                      importance: 'required',
+                      category: 'skill',
+                      scoreability: 'SCORED',
+                    },
+                  ],
+                  evidence: [
+                    {
+                      id: 'synthetic-python',
+                      type: 'skill',
+                      title: 'Python',
+                      normalized_content: 'Python',
+                    },
+                  ],
+                }
+              : replayTask === 'profile-facts-v1'
+                ? { raw_input: '使用 Python。' }
+                : replayTask === 'profile-normalize-v1'
+                  ? { facts: [fact] }
+                  : {};
       setReplay(await api('/debug/replay', { task: replayTask, payload }));
     } catch (e) {
       setError(String(e));
@@ -366,6 +368,8 @@ function DebugRuns({ path, go }: { path: string; go: (path: string) => void }) {
           Replay task
           <select value={replayTask} onChange={(e) => setReplayTask(e.target.value)}>
             <option value="diagnostic">diagnostic</option>
+            <option value="jd-requirements-v2">jd-requirements-v2</option>
+            <option value="scoreability-v1">scoreability-v1</option>
             <option value="jd-extract-v1">jd-extract-v1</option>
             <option value="matching-v1">matching-v1</option>
             <option value="profile-facts-v1">profile-facts-v1</option>

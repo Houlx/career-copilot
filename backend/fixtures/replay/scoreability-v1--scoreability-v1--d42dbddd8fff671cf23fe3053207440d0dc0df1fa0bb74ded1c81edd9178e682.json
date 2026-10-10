@@ -1,0 +1,12 @@
+{
+  "task": "scoreability-v1",
+  "prompt_version": "scoreability-v1",
+  "output": {
+    "classifications": [
+      {
+        "requirement_index": 0,
+        "scoreability": "NON_SCORABLE"
+      }
+    ]
+  }
+}

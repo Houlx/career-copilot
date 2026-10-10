@@ -3,7 +3,15 @@ from typing import TypedDict
 from langgraph.graph import END, START, StateGraph
 
 from ..errors import ErrorCode
-from ..models.jobs import JobExtraction, Matching, coverage, guard_requirements, validate_matches
+from ..models.jobs import (
+    JobRequirements,
+    Matching,
+    ScoreabilityResult,
+    apply_classifications,
+    coverage,
+    guard_requirements,
+    validate_matches,
+)
 
 
 class JobState(TypedDict, total=False):
@@ -13,6 +21,7 @@ class JobState(TypedDict, total=False):
     extraction: dict
     requirements: list[dict]
     requirements_valid: bool
+    raw_scoreability: dict
     scoreability_adjusted: bool
     matches: dict
     matches_valid: bool
@@ -26,16 +35,27 @@ def build_job_graph(trace, profiles, jobs, models):
         return {"profile_version": profile["profile_version"], "evidence": profile["evidence"]}
 
     def extract(state):
-        result = models.judge_model.invoke(
-            "jd-extract-v1", {"raw_jd": state["raw_jd"]}, JobExtraction
+        result = models.generation_model.invoke(
+            "jd-requirements-v2", {"raw_jd": state["raw_jd"]}, JobRequirements
         )
         return {"extraction": result.output.model_dump()}
 
     def check_requirements(state):
-        extraction = JobExtraction.model_validate(state["extraction"])
+        extraction = JobRequirements.model_validate(state["extraction"])
         return {
             "requirements": [r.model_dump() for r in extraction.requirements],
             "requirements_valid": True,
+        }
+
+    def classify(state):
+        if not state["requirements"]:
+            return {"requirements": [], "raw_scoreability": {"classifications": []}}
+        result = models.judge_model.invoke(
+            "scoreability-v1", {"requirements": state["requirements"]}, ScoreabilityResult
+        )
+        return {
+            "requirements": apply_classifications(state["requirements"], result.output),
+            "raw_scoreability": result.output.model_dump(),
         }
 
     def guard(state):
@@ -80,6 +100,7 @@ def build_job_graph(trace, profiles, jobs, models):
         ("load_confirmed_profile", load, ErrorCode.PROFILE_VALIDATION_FAILED),
         ("extract_job_requirements", extract, ErrorCode.JD_EXTRACTION_FAILED),
         ("validate_requirements", check_requirements, ErrorCode.MODEL_OUTPUT_INVALID),
+        ("classify_scoreability", classify, ErrorCode.SCOREABILITY_FAILED),
         ("apply_scoreability_guard", guard, ErrorCode.SCOREABILITY_FAILED),
         ("match_requirements", match, ErrorCode.MATCHING_FAILED),
         ("validate_matches", check_matches, ErrorCode.MATCH_VALIDATION_FAILED),

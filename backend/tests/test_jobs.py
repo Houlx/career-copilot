@@ -8,7 +8,9 @@ from career_copilot.errors import CopilotError
 from career_copilot.job_eval import extraction_metrics, matching_metrics, scoreability_metrics
 from career_copilot.models.jobs import (
     JobExtraction,
+    JobRequirements,
     Matching,
+    ScoreabilityResult,
     coverage,
     guard_requirements,
     validate_matches,
@@ -70,18 +72,23 @@ def test_full_flow_restart_outdated_delete(client, settings, monkeypatch):
         "load_confirmed_profile",
         "extract_job_requirements",
         "validate_requirements",
+        "classify_scoreability",
         "apply_scoreability_guard",
         "match_requirements",
         "validate_matches",
         "calculate_coverage",
         "persist_job_analysis",
     ]
-    for index, role, prompt in [(1, "judge", "jd-extract-v1"), (4, "generation", "matching-v1")]:
+    for index, role, prompt in [
+        (1, "generation", "jd-requirements-v2"),
+        (3, "judge", "scoreability-v1"),
+        (5, "generation", "matching-v1"),
+    ]:
         meta = trace["nodes"][index]["ai"]
         assert meta["model_role"] == role and meta["prompt_version"] == prompt
         assert meta["provider"] == "fake" and meta["total_tokens"] == 0
         assert meta["latency_ms"] >= 0 and meta["retry_count"] == 0
-    assert trace["nodes"][6]["state_changes"]["coverage"]["after"] == 66.7
+    assert trace["nodes"][7]["state_changes"]["coverage"]["after"] == 66.7
     assert all("debug_payload" not in n for n in trace["nodes"])
     client.post(
         "/api/profile/raw", json={"raw_input": "Changed synthetic profile.", "expected_version": 3}
@@ -260,17 +267,22 @@ def test_concurrent_profile_edit_rejects_publication(client, monkeypatch):
 
 def test_zero_scored_skips_matching(client, monkeypatch):
     confirmed(client)
-    extraction = JobExtraction(
-        title="Synthetic", requirements=[requirement(scoreability="NEEDS_CONFIRMATION")]
+    model = client.app.state.models.generation_model
+    original = model.invoke
+    extraction = JobRequirements(
+        title="Synthetic",
+        requirements=[{"text": "接受出差", "importance": "required", "category": "logistics"}],
     )
-    monkeypatch.setattr(
-        client.app.state.models.judge_model,
-        "invoke",
-        lambda *a: ModelResult(output=extraction, metadata={}),
-    )
-    monkeypatch.setattr(
-        client.app.state.models.generation_model, "invoke", lambda *a: pytest.fail("unnecessary AI")
-    )
+
+    def generate(task, *args):
+        assert task != "matching-v1"
+        return (
+            ModelResult(output=extraction, metadata={})
+            if task == "jd-requirements-v2"
+            else original(task, *args)
+        )
+
+    monkeypatch.setattr(model, "invoke", generate)
     job = analyze(client).json()["job"]
     assert job["coverage"] is None and job["requirements"][0]["match"] is None
 
@@ -350,7 +362,8 @@ def test_matching_receives_all_active_evidence(client, monkeypatch):
     evidence = client.get("/api/profile").json()["profile"]["evidence"]
 
     def inspect(task, payload, schema):
-        assert task == "matching-v1"
+        if task != "matching-v1":
+            return original(task, payload, schema)
         assert {e["id"] for e in payload["evidence"]} == {e["id"] for e in evidence}
         assert all(r["scoreability"] == "SCORED" for r in payload["requirements"])
         assert all("raw_content" not in e for e in payload["evidence"])
@@ -362,25 +375,30 @@ def test_matching_receives_all_active_evidence(client, monkeypatch):
 
 def test_guard_adjustment_is_traced(client, monkeypatch):
     confirmed(client)
-    output = JobExtraction(title="Synthetic", requirements=[requirement(text="身体健康")])
+    output = ScoreabilityResult(
+        classifications=[{"requirement_index": i, "scoreability": "SCORED"} for i in range(4)]
+    )
     monkeypatch.setattr(
         client.app.state.models.judge_model,
         "invoke",
         lambda *a: ModelResult(output=output, metadata={}),
     )
     result = analyze(client).json()
-    assert result["job"]["coverage"] is None
+    assert result["job"]["requirements"][3]["scoreability"] == "NON_SCORABLE"
     run = client.get("/api/debug/runs/" + result["run_id"]).json()
-    assert run["nodes"][3]["output_summary"]["scoreability_adjusted"] is True
+    assert run["nodes"][4]["output_summary"]["scoreability_adjusted"] is True
 
 
 def test_invalid_match_fails_at_validation_without_writes(client, monkeypatch):
     confirmed(client)
+    original = client.app.state.models.generation_model.invoke
     invalid = Matching.model_validate({"matches": [match(ids=["inactive-or-invented"])]})
     monkeypatch.setattr(
         client.app.state.models.generation_model,
         "invoke",
-        lambda *a: ModelResult(output=invalid, metadata={}),
+        lambda *a: (
+            ModelResult(output=invalid, metadata={}) if a[0] == "matching-v1" else original(*a)
+        ),
     )
     response = analyze(client)
     assert (

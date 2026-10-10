@@ -1,0 +1,14 @@
+{
+  "task": "jd-requirements-v2",
+  "prompt_version": "jd-requirements-v2",
+  "output": {
+    "title": "Synthetic role 4",
+    "requirements": [
+      {
+        "text": "三年以上开发经验",
+        "importance": "required",
+        "category": "experience"
+      }
+    ]
+  }
+}

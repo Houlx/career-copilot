@@ -12,6 +12,8 @@ def extraction_metrics(expected: dict, actual: dict) -> dict:
     result = {"requirement_missing": missing, "unsupported_addition": added}
     # Match duplicate texts in order rather than silently dropping duplicates.
     for field in ("importance", "category", "scoreability"):
+        if field == "scoreability" and any(field not in r for r in gold):
+            continue
         remaining = list(predicted)
         correct = 0
         for r in gold:

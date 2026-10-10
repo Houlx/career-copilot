@@ -11,7 +11,14 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 
 from ..config import ModelConfig, Settings
 from ..errors import CopilotError, ErrorCode
-from .jobs import JobExtraction, Matching, fake_matching
+from .jobs import (
+    JobExtraction,
+    JobRequirements,
+    Matching,
+    ScoreabilityResult,
+    fake_matching,
+    fake_scoreability,
+)
 from .profile import NormalizedProfile, ProfileFacts
 from .prompts import PROMPTS, DiagnosticResult, JudgeDiagnosticResult, PromptSpec
 from .providers import JevProvider, OpenAICompatibleProvider
@@ -140,6 +147,21 @@ class RoleModel:
                             },
                         ],
                     }
+                elif task == "jd-requirements-v2" and schema is JobRequirements:
+                    value = {
+                        "title": "Synthetic demo job",
+                        "requirements": [
+                            {"text": text, "importance": importance, "category": category}
+                            for text, importance, category in (
+                                ("Python", "required", "skill"),
+                                ("SQL", "preferred", "skill"),
+                                ("接受出差", "required", "logistics"),
+                                ("身体健康", "required", "personal_trait"),
+                            )
+                        ],
+                    }
+                elif task == "scoreability-v1" and schema is ScoreabilityResult:
+                    value = fake_scoreability(payload)
                 elif task == "matching-v1" and schema is Matching:
                     value = fake_matching(payload)
                 else:
