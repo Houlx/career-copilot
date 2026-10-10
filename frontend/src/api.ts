@@ -8,6 +8,7 @@ export interface Settings {
     provider: string;
     model: string;
     api_key_configured: boolean;
+    timeout_seconds: number;
     structured_output_mode?: 'json_schema' | 'json_object' | null;
   }[];
   prompts: Record<string, string>;

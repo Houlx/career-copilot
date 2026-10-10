@@ -1,6 +1,6 @@
 # Career Copilot
 
-独立的、面向个人求职的 Workflow-first AI 应用。当前 **Phase 4 Resume Generation 实现及离线验收完成；唯一一次 synthetic live 因 ReadTimeout 失败，已停止**。后端 267 / 前端 21 tests、lint/format/check/build/audit、Profile/Job/Resume eval 及 fake HTTP 全通过，自动验证 0 live。Live 仅 1 次 GLM json_object 请求、retry=0，无真实用户数据；尚未满足 live 成功验收条件。详见 [PHASE_4.md](docs/PHASE_4.md)。历史 Provider 验收保留于 [PHASE_3_5B_R3.md](docs/PHASE_3_5B_R3.md) 及 [R2](docs/PHASE_3_5B_R2.md)。
+独立的、面向个人求职的 Workflow-first AI 应用。当前 **Phase 4.1 完成，角色 timeout 可配置；唯一一次新的 synthetic Resume live 成功，已停止，没有 Phase 5**。默认 Generation/Judge 均 30 秒，本地 Generation 显式 60 秒。后端 281 / 前端 21 tests、lint/format/check/build/audit、Profile/Job/Resume eval 及 fake HTTP 全通过，自动验证 0 live。此次 GLM json_object HTTP/JSON/Pydantic/grounding/language/Markdown 全通过，latency=29076.369 ms，tokens=823/2244/3067，request_count=1、retry=0，无真实用户数据。该耗时低于 30 秒，不能证明原 timeout 是唯一 blocker。详见 [PHASE_4_1.md](docs/PHASE_4_1.md)；原 30 秒失败保留于 [PHASE_4.md](docs/PHASE_4.md)。历史 Provider 验收见 [PHASE_3_5B_R3.md](docs/PHASE_3_5B_R3.md) 及 [R2](docs/PHASE_3_5B_R2.md)。
 
 Generation/GLM 负责 Profile facts、normalization、JD requirements、matching 和 Resume generation；Judge/Jev 只负责有限候选上的 scoreability。结果和指标见 [PHASE_3_5B_R.md](docs/PHASE_3_5B_R.md)。原 Jev 开放文本 extraction 的失败探索保留在 [PHASE_3_5B.md](docs/PHASE_3_5B.md)。
 
@@ -132,6 +132,7 @@ uv run python scripts/check_http.py
 - OpenAI-compatible 角色覆盖：`JUDGE_MODEL / JUDGE_BASE_URL / JUDGE_API_KEY` 与 `GENERATION_MODEL / GENERATION_BASE_URL / GENERATION_API_KEY`；未配置时回退 `MODEL / BASE_URL / API_KEY`。
 - Jev 必须配置专用 `JUDGE_MODEL / JUDGE_BASE_URL / JUDGE_API_KEY`，不回退共享配置；base URL 包含 version（不含 `/systemone`），model ID 不硬编码。
 - 新增 `judge-diagnostic-v1` / `generation-diagnostic-v1`（各 128 output tokens），只使用 synthetic 输入。原可执行 AI tasks：`diagnostic`（prompt `diagnostic-v1`，128 tokens）、`profile-facts-v1`（Generation）及 `profile-normalize-v1`（Generation，各 6000 output tokens）；temperature=0。
+- `GENERATION_TIMEOUT_SECONDS` / `JUDGE_TIMEOUT_SECONDS`：默认均 30 秒，必须满足有限数值 `0 < timeout <= 300`，非法配置启动报错。角色配置注入 Provider；Settings API/页面和 AI trace 显示 `timeout_seconds`。本地 Phase 4.1 Generation 显式覆盖 60 秒，Judge 保留 30 秒。沿用 HTTPX 各阶段 timeout 与原 latency/retry 语义。
 - `.env`、数据库、个人信息和 secret 不提交 Git。Settings 不返回 secret 或 provider URL。
 
 独立 replay：

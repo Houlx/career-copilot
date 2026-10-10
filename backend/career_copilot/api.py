@@ -129,6 +129,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                         if settings.for_role(role).provider == "openai_compatible"
                         else None
                     ),
+                    "timeout_seconds": settings.for_role(role).timeout_seconds,
                     "api_key_configured": bool(settings.for_role(role).api_key.get_secret_value()),
                 }
                 for role in ("judge", "generation")

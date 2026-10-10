@@ -2,7 +2,22 @@
 
 更新日期：2026-10-10（Asia/Shanghai）
 
-## Current status — Phase 4
+## Current status — Phase 4.1
+
+**Phase 4.1 完成：角色 timeout 可配置，全部离线回归通过，唯一一次新的 synthetic Resume live 成功；已停止，没有 Phase 5。** 此状态优先于下方历史记录。
+
+- `GENERATION_TIMEOUT_SECONDS` / `JUDGE_TIMEOUT_SECONDS` 默认均 30；有限数值 `0 < timeout <= 300`，非法启动报错，不 clamp。Settings → ModelConfig → Router → Provider(timeout_seconds)，业务节点不感知配置。
+- Settings API/页面显示角色 timeout，AI trace metadata 成功/失败均记录 timeout_seconds；ReadTimeout 仍 MODEL_REQUEST_FAILED + 安全 error_kind，不暴露原异常。
+- 离线回归：281 backend / 21 frontend，Ruff/format/check/build/audit（0 vulnerabilities）、Profile/Jobs/Resume replay eval、空临时 DB 实际 fake HTTP 全通过，自动验证 **0 live requests**。临时服务/DB 已清理。
+- 离线完成后只修改本地 `.env` Generation timeout=60；Judge 仍 30，GLM `glm-5.3-flash` / json_object、model/key/base URL/debug/prompt/context/output limit/retry 不变。`.env` 不提交。
+- 唯一一次 `resume-01` live：openai-compatible / glm-5.3-flash / json_object / timeout=60，HTTP 200，JSON/Pydantic/Evidence/numeric/language/Markdown 全通过；latency=29076.369 ms，input/output/total tokens=823/2244/3067，request_count=1，retry=0。
+- metrics：items=8、refs=9、invalid refs=0、unsupported items=0、numeric failures=0、evidence_backed_item_rate=1.0；不代表语义 entailment 或模型总体质量。
+- 本次耗时低于 30 秒，不能由成功推断原 timeout 是唯一 blocker；Phase 4 原 30 秒 ReadTimeout 历史保留，不覆写。
+- 无其他 live、真实用户数据、prompt/schema/business semantics/fixtures 改动。没有 Phase 5；提交并确认 clean 后 STOP，没有额外 live 授权。
+
+下一会话先读 [PHASE_4_1.md](PHASE_4_1.md)，结果 [live-timeout-60.json](../evals/results/phase_4/live-timeout-60.json)，再按授权范围定向读取代码。原失败历史见 [PHASE_4.md](PHASE_4.md)。
+
+## Historical status — Phase 4
 
 **Phase 4 实现与离线回归完成；唯一一次 synthetic live ReadTimeout，已停止，live 验收未通过。** 此状态优先于下方保留的历史记录。
 

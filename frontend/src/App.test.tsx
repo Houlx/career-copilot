@@ -13,6 +13,7 @@ const settings = {
       provider: 'openai-compatible',
       model: 'Not configured',
       api_key_configured: false,
+      timeout_seconds: 30,
     },
   ],
   prompts: { diagnostic: 'diagnostic-v1' },
@@ -78,6 +79,8 @@ describe('Phase 1 shell', () => {
     window.history.replaceState({}, '', '/settings');
     render(<App />);
     expect(await screen.findByText('Prompt 版本')).toBeInTheDocument();
+    expect(screen.getByText('请求超时（秒）')).toBeInTheDocument();
+    expect(screen.getByText('30')).toBeInTheDocument();
     expect(screen.getByText('未配置')).toBeInTheDocument();
     expect(screen.getByText('关闭（默认）')).toBeInTheDocument();
   });

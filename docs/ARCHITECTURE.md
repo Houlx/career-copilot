@@ -100,9 +100,13 @@ Python
 
 Settings 在应用构造时加载一次，角色专用配置优先，共享配置回退。Node 仅接受注入的依赖，不直接读取环境变量。
 
+Phase 4.1 增加 **Role-specific provider timeout**：`GENERATION_TIMEOUT_SECONDS` / `JUDGE_TIMEOUT_SECONDS` 默认均 30，启动时验证有限数值 `0 < timeout <= 300`，非法值报配置错误，不 clamp。沿 `Settings → ModelConfig.timeout_seconds → ModelRouter → Provider(timeout_seconds) → httpx.Client` 注入；Provider 不读取环境变量。Jev 使用 Judge 配置，默认 30 秒，协议与 retry 不变。本地 Generation 显式覆盖为 60 秒，保留 GLM/json_object/prompt/output limit。timeout 属于 infrastructure config，不改变 Resume workflow。
+
+Settings API allowlist 与页面显示各角色 `timeout_seconds`；AI metadata 在成功和失败时均记录该配置。沿用 HTTPX timeout 语义（connect/read/write/pool 各阶段超时），不是整次调用的硬性 wall-clock deadline；`latency_ms` 仍记录原 monotonic 全调用耗时。网络错误继续映射 `MODEL_REQUEST_FAILED`，安全 failure class 为 `provider_metadata.error_kind`，不返回原异常消息。live eval 仍 max_attempts=1、retry=0。Phase 4 原 30 秒失败历史保留，60 秒验证结果见 [PHASE_4_1.md](PHASE_4_1.md)。
+
 每个可执行 task 有 PromptSpec：版本、角色、prompt、输出上限、温度。已实现 diagnostic-v1、profile-facts-v1、profile-normalize-v1、jd-requirements-v2、scoreability-v1、matching-v1（历史 jd-extract-v1 保留），Pydantic strict 输出 schema 禁止额外字段。Generation 从 raw 提取事实并保留连续原文 quote；Generation 仅接收 facts，输出恰好一条 entry 对应一个 source_index，校验类型和数字保留。用户编辑有独立来源标记，不覆盖 raw/AI 版本。不扩展为工具注册驱动的流程。
 
-live 按 role provider 配置选择专用 adapter：Jev POST `/systemone`（state/questions），OpenAI-compatible POST `/chat/completions`（`json_schema` structured output）。默认 fake/replay 不构造网络 adapter/client。Jev 支持 `judge-diagnostic-v1` 和 `scoreability-v1`，其余 task 在发送输入前拒绝。scoreability 一份 state 下按 requirement index 批量建 Choice questions，原生 response 在 provider 层转换为 ScoreabilityResult。Python 验证完整唯一映射，workflow 再执行原有 safety guard。Profile facts 仅换 role，旧 JD v1 不修改，业务 extraction 使用 v2。新增 `generation-diagnostic-v1` 使用既有 Generation contract。客户端 30 秒 timeout，不跟随 redirect；最多两次尝试，无嵌套 SDK 重试，无 repair 对话。HTTP/网络错误是 MODEL_REQUEST_FAILED，结构/校验错误是 MODEL_OUTPUT_INVALID。未来业务节点的特定错误分类已列入 ErrorCode。
+live 按 role provider 配置选择专用 adapter：Jev POST `/systemone`（state/questions），OpenAI-compatible POST `/chat/completions`（`json_schema` structured output）。默认 fake/replay 不构造网络 adapter/client。Jev 支持 `judge-diagnostic-v1` 和 `scoreability-v1`，其余 task 在发送输入前拒绝。scoreability 一份 state 下按 requirement index 批量建 Choice questions，原生 response 在 provider 层转换为 ScoreabilityResult。Python 验证完整唯一映射，workflow 再执行原有 safety guard。Profile facts 仅换 role，旧 JD v1 不修改，业务 extraction 使用 v2。新增 `generation-diagnostic-v1` 使用既有 Generation contract。客户端角色专用 timeout 默认均为 30 秒（Phase 4.1 可配置），不跟随 redirect；最多两次尝试，无嵌套 SDK 重试，无 repair 对话。HTTP/网络错误是 MODEL_REQUEST_FAILED，结构/校验错误是 MODEL_OUTPUT_INVALID。未来业务节点的特定错误分类已列入 ErrorCode。
 
 独立 smoke 要求 AI_MODE=live + --live + --role，固定 synthetic 输入，严格一次尝试（不使用常规重试预算）。复用 RunTrace 记录 diagnostic run/node，不调用业务 graph/store，不读写业务表。Jev 已知 response_model/probability/request id 放现有 provider_metadata JSON，继续脱敏，无 schema migration。细节、真实验证状态见 [PHASE_3_5A.md](PHASE_3_5A.md)。
 

@@ -76,6 +76,7 @@ class RoleModel:
             "model_name": self.config.model if self.mode == "live" else self.mode,
             "prompt_version": spec.version,
             "temperature": spec.temperature,
+            "timeout_seconds": self.config.timeout_seconds,
             "input_tokens": 0,
             "output_tokens": 0,
             "total_tokens": 0,
@@ -209,9 +210,9 @@ class RoleModel:
     ) -> T:
         # Instantiate adapters only on the live path. One retry owner; no SDK retries.
         provider = (
-            JevProvider(self.config)
+            JevProvider(self.config, timeout_seconds=self.config.timeout_seconds)
             if self.config.provider == "jev"
-            else OpenAICompatibleProvider(self.config)
+            else OpenAICompatibleProvider(self.config, timeout_seconds=self.config.timeout_seconds)
         )
         provider.validate_task(spec, schema)
         for attempt in range(max_attempts):

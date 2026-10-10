@@ -1,0 +1,110 @@
+{
+  "success": true,
+  "results": [
+    {
+      "case_id": "resume-01",
+      "passed": true,
+      "metrics": {
+        "resume_item_count": 8,
+        "evidence_reference_count": 9,
+        "invalid_evidence_reference_count": 0,
+        "unsupported_fact_item_count": 0,
+        "numeric_grounding_failure_count": 0,
+        "evidence_backed_item_rate": 1.0
+      },
+      "markdown_render_success": true,
+      "schema_mapping_success": true,
+      "synthetic_output": {
+        "language": "en",
+        "headline": {
+          "text": "Python Engineer with React Prototyping Experience",
+          "evidence_ids": [
+            "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          ]
+        },
+        "summary": [
+          {
+            "text": "Worked as a Python engineer at Synthetic Studio from 2022 to 2024.",
+            "evidence_ids": [
+              "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ]
+          },
+          {
+            "text": "Built Python 3.12 services and reduced latency by 20%.",
+            "evidence_ids": [
+              "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ]
+          },
+          {
+            "text": "Built a React prototype for an internal tool.",
+            "evidence_ids": [
+              "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            ]
+          }
+        ],
+        "sections": [
+          {
+            "kind": "skills",
+            "items": [
+              {
+                "text": "Python development, including building Python 3.12 services.",
+                "evidence_ids": [
+                  "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ]
+              },
+              {
+                "text": "React prototyping, demonstrated through an internal tool prototype.",
+                "evidence_ids": [
+                  "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "experience",
+            "items": [
+              {
+                "text": "Python engineer at Synthetic Studio from 2022 to 2024; built Python 3.12 services and reduced latency by 20%.",
+                "evidence_ids": [
+                  "career-work-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "projects",
+            "items": [
+              {
+                "text": "Built a React prototype for an internal tool.",
+                "evidence_ids": [
+                  "career-project-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "synthetic_markdown": "# Python Engineer with React Prototyping Experience\n\n## Summary\n\nWorked as a Python engineer at Synthetic Studio from 2022 to 2024\\.\n\nBuilt Python 3\\.12 services and reduced latency by 20%\\.\n\nBuilt a React prototype for an internal tool\\.\n\n## Skills\n\n- Python development, including building Python 3\\.12 services\\.\n- React prototyping, demonstrated through an internal tool prototype\\.\n\n## Experience\n\n- Python engineer at Synthetic Studio from 2022 to 2024; built Python 3\\.12 services and reduced latency by 20%\\.\n\n## Projects\n\n- Built a React prototype for an internal tool\\.\n"
+    }
+  ],
+  "calls": [
+    {
+      "model_role": "generation",
+      "provider": "openai-compatible",
+      "model_name": "glm-5.3-flash",
+      "prompt_version": "resume-generation-v1",
+      "temperature": 0,
+      "timeout_seconds": 60.0,
+      "input_tokens": 823,
+      "output_tokens": 2244,
+      "total_tokens": 3067,
+      "latency_ms": 29076.369,
+      "retry_count": 0,
+      "structured_output_mode": "json_object",
+      "http_status": 200
+    }
+  ],
+  "live_api_calls": 1,
+  "retry_count": 0
+}

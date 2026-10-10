@@ -141,6 +141,8 @@ function SettingsPage({ settings }: { settings: Settings }) {
                   <dd>{model.structured_output_mode}</dd>
                 </>
               )}
+              <dt>请求超时（秒）</dt>
+              <dd>{model.timeout_seconds}</dd>
               <dt>API Key</dt>
               <dd>{model.api_key_configured ? '已配置 · 不显示密钥' : '未配置'}</dd>
             </dl>

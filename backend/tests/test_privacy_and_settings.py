@@ -41,6 +41,8 @@ def test_role_overrides():
 
 
 def test_settings_endpoint_never_exposes_credentials(settings):
+    settings.generation_timeout_seconds = 60
+    settings.judge_timeout_seconds = 25
     settings.api_key = SecretStr("special-secret")
     settings.base_url = "https://user:password@example.com/v1?api_key=special-secret"
     with TestClient(create_app(settings)) as client:
@@ -49,6 +51,9 @@ def test_settings_endpoint_never_exposes_credentials(settings):
         assert "special-secret" not in response.text
         assert "password" not in response.text
         assert response.json()["models"][0]["api_key_configured"]
+        models = {model["role"]: model for model in response.json()["models"]}
+        assert models["generation"]["timeout_seconds"] == 60
+        assert models["judge"]["timeout_seconds"] == 25
 
 
 def test_debug_payload_opt_in_and_secret_redaction(settings):
@@ -119,3 +124,29 @@ def test_structured_output_default_override_and_settings_privacy(settings, monke
 def test_structured_output_mode_rejects_unknown_capability(value):
     with pytest.raises(ValidationError):
         Settings(_env_file=None, generation_structured_output=value)
+
+
+def test_timeout_defaults_and_role_environment_overrides(monkeypatch):
+    defaults = Settings(_env_file=None)
+    assert defaults.for_role("generation").timeout_seconds == 30
+    assert defaults.for_role("judge").timeout_seconds == 30
+    monkeypatch.setenv("GENERATION_TIMEOUT_SECONDS", "60")
+    monkeypatch.setenv("JUDGE_TIMEOUT_SECONDS", "25")
+    settings = Settings(_env_file=None, judge_provider="jev")
+    assert settings.for_role("generation").timeout_seconds == 60
+    assert settings.for_role("judge").timeout_seconds == 25
+    assert (
+        Settings(_env_file=None, judge_provider="openai_compatible")
+        .for_role("judge")
+        .timeout_seconds
+        == 25
+    )
+
+
+@pytest.mark.parametrize("role", ["generation", "judge"])
+@pytest.mark.parametrize("value", ["0", "-1", "301", "nan", "inf"])
+def test_invalid_timeout_environment_rejected_at_startup(monkeypatch, role, value):
+    monkeypatch.setenv(f"{role.upper()}_TIMEOUT_SECONDS", value)
+    with pytest.raises(ValidationError) as error:
+        Settings(_env_file=None)
+    assert error.value.errors()[0]["loc"] == (f"{role}_timeout_seconds",)

@@ -11,7 +11,7 @@ from career_copilot.database import Database
 from career_copilot.errors import CopilotError, ErrorCode
 from career_copilot.models.jobs import JobExtraction
 from career_copilot.models.prompts import DiagnosticResult, JudgeDiagnosticResult
-from career_copilot.models.router import ModelRouter, replay_key
+from career_copilot.models.router import AI_OBSERVER, ModelRouter, replay_key
 from career_copilot.smoke import main, run_smoke
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
@@ -205,6 +205,72 @@ def test_jev_request_failures_retry_limit(live_settings, monkeypatch, failure):
     assert error.value.code == ErrorCode.MODEL_REQUEST_FAILED
     assert "judge-secret" not in str(error.value)
     assert len(calls) == 2
+
+
+@pytest.mark.parametrize("provider", ["jev", "openai_compatible"])
+def test_role_timeouts_reach_http_client(live_settings, monkeypatch, provider):
+    live_settings.judge_provider = provider
+    live_settings.generation_timeout_seconds = 60
+    live_settings.judge_timeout_seconds = 25
+    requests = []
+
+    def handler(request):
+        requests.append(request)
+        return httpx.Response(
+            200,
+            json=(
+                jev_body()
+                if request.url.path.endswith("systemone")
+                else {"choices": [{"message": {"content": '{"message":"ok"}'}}]}
+            ),
+        )
+
+    clients = transport(monkeypatch, handler)
+    router = ModelRouter(live_settings)
+    for role, task, schema, payload, timeout in (
+        ("generation", "generation-diagnostic-v1", DiagnosticResult, {}, 60),
+        (
+            "judge",
+            "judge-diagnostic-v1" if provider == "jev" else "diagnostic",
+            JudgeDiagnosticResult if provider == "jev" else DiagnosticResult,
+            {"state": "synthetic"},
+            25,
+        ),
+    ):
+        result = getattr(router, f"{role}_model").invoke(task, payload, schema, max_attempts=1)
+        assert result.metadata["timeout_seconds"] == timeout
+    assert clients == [
+        {"timeout": 60, "follow_redirects": False},
+        {"timeout": 25, "follow_redirects": False},
+    ]
+    assert [r.extensions["timeout"]["read"] for r in requests] == [60, 25]
+
+
+def test_generation_read_timeout_keeps_safe_failure_metadata(live_settings, monkeypatch):
+    live_settings.generation_timeout_seconds = 60
+    requests, metadata = [], []
+
+    def handler(request):
+        requests.append(request)
+        raise httpx.ReadTimeout("private raw exception generation-secret", request=request)
+
+    transport(monkeypatch, handler)
+    token = AI_OBSERVER.set(metadata.append)
+    try:
+        with pytest.raises(CopilotError) as error:
+            ModelRouter(live_settings).generation_model.invoke(
+                "generation-diagnostic-v1", {}, DiagnosticResult, max_attempts=1
+            )
+    finally:
+        AI_OBSERVER.reset(token)
+    assert error.value.code == ErrorCode.MODEL_REQUEST_FAILED
+    assert len(requests) == len(metadata) == 1
+    assert metadata[0]["timeout_seconds"] == 60
+    assert metadata[0]["provider_metadata"] == {"error_kind": "ReadTimeout"}
+    assert metadata[0]["retry_count"] == 0
+    assert metadata[0]["latency_ms"] >= 0
+    assert "private raw exception" not in str(error.value) + json.dumps(metadata)
+    assert "generation-secret" not in str(error.value) + json.dumps(metadata)
 
 
 @pytest.mark.parametrize(

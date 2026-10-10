@@ -78,14 +78,15 @@ def add_usage(meta: dict, input_tokens: int, output_tokens: int):
 
 
 class HTTPProvider:
-    def __init__(self, config: ModelConfig):
+    def __init__(self, config: ModelConfig, *, timeout_seconds: float):
         self.config = config
+        self.timeout_seconds = timeout_seconds
 
     def validate_task(self, spec: PromptSpec, schema: type[BaseModel]):
         pass
 
     def post(self, endpoint: str, body: dict) -> httpx.Response:
-        with httpx.Client(timeout=30, follow_redirects=False) as client:
+        with httpx.Client(timeout=self.timeout_seconds, follow_redirects=False) as client:
             response = client.post(
                 f"{self.config.base_url.rstrip('/')}/{endpoint}",
                 headers={"Authorization": f"Bearer {self.config.api_key.get_secret_value()}"},
