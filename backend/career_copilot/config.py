@@ -5,12 +5,15 @@ from urllib.parse import urlsplit
 from pydantic import BaseModel, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+ReasoningEffort = Literal["low", "high", "max"]
+
 
 class ModelConfig(BaseModel):
     role: Literal["judge", "generation"]
     provider: Literal["jev", "openai_compatible"] = "openai_compatible"
     structured_output_mode: Literal["json_schema", "json_object"] = "json_schema"
     timeout_seconds: float = Field(default=30, gt=0, le=300, allow_inf_nan=False)
+    reasoning_effort: ReasoningEffort | None = None
     model: str
     base_url: str
     api_key: SecretStr
@@ -35,6 +38,7 @@ class Settings(BaseSettings):
     judge_api_key: SecretStr = SecretStr("")
     generation_structured_output: Literal["json_schema", "json_object"] = "json_schema"
     generation_timeout_seconds: float = Field(default=30, gt=0, le=300, allow_inf_nan=False)
+    generation_reasoning_effort: ReasoningEffort | None = None
     generation_model: str = ""
     generation_base_url: str = ""
     generation_api_key: SecretStr = SecretStr("")
@@ -81,6 +85,7 @@ class Settings(BaseSettings):
             structured_output_mode=(
                 self.generation_structured_output if role == "generation" else "json_schema"
             ),
+            reasoning_effort=(self.generation_reasoning_effort if role == "generation" else None),
             model=getattr(self, f"{role}_model") or self.model,
             base_url=getattr(self, f"{role}_base_url") or self.base_url,
             api_key=(

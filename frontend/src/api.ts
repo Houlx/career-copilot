@@ -9,6 +9,7 @@ export interface Settings {
     model: string;
     api_key_configured: boolean;
     timeout_seconds: number;
+    reasoning_effort?: 'low' | 'high' | 'max' | null;
     structured_output_mode?: 'json_schema' | 'json_object' | null;
   }[];
   prompts: Record<string, string>;

@@ -125,3 +125,25 @@ describe('Phase 1 shell', () => {
     expect(fetch).toHaveBeenCalledWith('/api/settings', undefined);
   });
 });
+
+describe('Generation reasoning configuration', () => {
+  it.each([null, 'low', 'high', 'max'])('shows read-only effort %s', async (effort) => {
+    window.history.replaceState({}, '', '/settings');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          ...settings,
+          models: [{ ...settings.models[0], role: 'generation', reasoning_effort: effort }],
+        }),
+      })),
+    );
+    render(<App />);
+    expect(await screen.findByText('Reasoning effort')).toBeInTheDocument();
+    expect(
+      screen.getByText(effort ? effort[0].toUpperCase() + effort.slice(1) : 'Default'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+  });
+});

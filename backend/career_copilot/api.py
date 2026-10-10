@@ -130,6 +130,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                         else None
                     ),
                     "timeout_seconds": settings.for_role(role).timeout_seconds,
+                    **(
+                        {"reasoning_effort": settings.for_role(role).reasoning_effort}
+                        if role == "generation"
+                        else {}
+                    ),
                     "api_key_configured": bool(settings.for_role(role).api_key.get_secret_value()),
                 }
                 for role in ("judge", "generation")

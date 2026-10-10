@@ -25,6 +25,12 @@ Phase 1 的 dummy graph 只有固定边：`START → prepare_input → mutate_st
 
 Phase 3.5B-R 的独立九节点 Job Analysis graph：确认门禁 → Generation extraction → validation → Jev scoreability → Python guard → 全量证据 Generation matching → validation → Python Coverage → 原子保存；Phase 4 已新增独立七节点 Resume Generation graph。用户确认和显式生成简历的授权边界由 API/Python 检查。不存在 Agent loop、ToolRegistry、模型动态选边、MCP、RAG、embedding、auth 或多用户设计。
 
+## Generation provider inference configuration (Phase 4.2)
+
+`GENERATION_REASONING_EFFORT` 属于 Provider inference configuration：Settings → ModelConfig → ModelRouter → OpenAICompatibleProvider constructor/config → request body → trace metadata。严格可选 low/high/max，默认 None，unset 时 wire 字段 absent。仅显式配置 Generation，禁止模型名或 URL 自动检测；不进入业务 workflow，不改变上方 Profile/Job/Resume graph。
+
+Settings API 的 Generation allowlist 和只读页面显示配置；AI observer 在 success/failure/fake/replay 均记录 reasoning_effort。该值是配置，不是服务端执行确认。Judge/Jev 语义不变，不存 hidden reasoning，不扩 usage token schema。官方来源、JSON schema 文档差异及 0-live 验证见 [PHASE_4_2.md](PHASE_4_2.md)。本地配置未启用 low。
+
 ## State and persistence
 
 `CareerState` 当前只有 message / counter / result。节点返回部分更新，LangGraph 合并状态；不维护聊天历史，也不提前加入空业务字段。

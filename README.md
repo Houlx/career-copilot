@@ -1,6 +1,6 @@
 # Career Copilot
 
-独立的、面向个人求职的 Workflow-first AI 应用。当前 **Phase 4.1 完成，角色 timeout 可配置；唯一一次新的 synthetic Resume live 成功，已停止，没有 Phase 5**。默认 Generation/Judge 均 30 秒，本地 Generation 显式 60 秒。后端 281 / 前端 21 tests、lint/format/check/build/audit、Profile/Job/Resume eval 及 fake HTTP 全通过，自动验证 0 live。此次 GLM json_object HTTP/JSON/Pydantic/grounding/language/Markdown 全通过，latency=29076.369 ms，tokens=823/2244/3067，request_count=1、retry=0，无真实用户数据。该耗时低于 30 秒，不能证明原 timeout 是唯一 blocker。详见 [PHASE_4_1.md](docs/PHASE_4_1.md)；原 30 秒失败保留于 [PHASE_4.md](docs/PHASE_4.md)。历史 Provider 验收见 [PHASE_3_5B_R3.md](docs/PHASE_3_5B_R3.md) 及 [R2](docs/PHASE_3_5B_R2.md)。
+独立的、面向个人求职的 Workflow-first AI 应用。当前 **Phase 4.2 完成**：Generation 可选 `GENERATION_REASONING_EFFORT=low|high|max`，默认 unset，未配置时 Provider request 完全不加字段。Settings 只读展示及成功/失败 trace 已贯通；Judge/Jev 不变。官方 capability、文档限制、人工 Test 1 输入及 baseline 见 [PHASE_4_2.md](docs/PHASE_4_2.md)。319 backend / 25 frontend tests、lint/format/check/build/audit、Profile/Job/Resume eval 和临时空库 fake HTTP 全通过，本阶段 **0 live requests**。本地 `.env` 未改，Generation timeout 仍 60 秒，Judge 30；low 由用户后续自行设置、重启并在 localhost:5173 手测。没有进入 Phase 5。Phase 4.1 synthetic Resume live 成功是历史记录，见 [PHASE_4_1.md](docs/PHASE_4_1.md)。
 
 Generation/GLM 负责 Profile facts、normalization、JD requirements、matching 和 Resume generation；Judge/Jev 只负责有限候选上的 scoreability。结果和指标见 [PHASE_3_5B_R.md](docs/PHASE_3_5B_R.md)。原 Jev 开放文本 extraction 的失败探索保留在 [PHASE_3_5B.md](docs/PHASE_3_5B.md)。
 

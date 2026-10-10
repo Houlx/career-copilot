@@ -107,19 +107,19 @@ class OpenAICompatibleProvider(HTTPProvider):
                 "strict": True,
                 "schema": schema.model_json_schema(),
             }
-        response = self.post(
-            "chat/completions",
-            {
-                "model": self.config.model,
-                "messages": [
-                    {"role": "system", "content": spec.system},
-                    {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
-                ],
-                "temperature": spec.temperature,
-                "max_tokens": spec.max_output_tokens,
-                "response_format": response_format,
-            },
-        )
+        body = {
+            "model": self.config.model,
+            "messages": [
+                {"role": "system", "content": spec.system},
+                {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+            ],
+            "temperature": spec.temperature,
+            "max_tokens": spec.max_output_tokens,
+            "response_format": response_format,
+        }
+        if self.config.role == "generation" and self.config.reasoning_effort is not None:
+            body["reasoning_effort"] = self.config.reasoning_effort
+        response = self.post("chat/completions", body)
         meta["http_status"] = response.status_code
         try:
             body = response.json()

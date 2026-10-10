@@ -2,7 +2,20 @@
 
 更新日期：2026-10-10（Asia/Shanghai）
 
-## Current status — Phase 4.1
+## Current status — Phase 4.2
+
+**Phase 4.2 完成：官方 capability gate 通过，Generation 可选 reasoning 配置已接入，默认 unset；本阶段 0 live requests，没有 Phase 5。** 此状态优先于下方历史记录。
+
+- 智谱标准 endpoint / glm-5.3-flash：顶层 `reasoning_effort=low|high|max`，Provider default max；JSON/non-streaming 文档确认及 schema 不一致详见 [PHASE_4_2.md](PHASE_4_2.md)。没有模型 API 验证。
+- `GENERATION_REASONING_EFFORT` 严格 enum，可选 None；unset 时 wire 完全不加字段，空字符串/非法值启动失败。Settings → ModelConfig → Router → Provider → trace；无模型名/URL 自动检测，无 task override。
+- Settings Generation 条目安全暴露 reasoning_effort；前端只读 Default/Low/High/Max。成功/timeout/provider/schema error、fake/replay metadata 均表达配置；Judge/Jev 不变。不保存隐藏推理、不扩 token schema。
+- 离线：319 backend / 25 frontend，Ruff/format/check/build/audit（0 vulnerabilities）、Profile/Jobs/Resume replay eval、临时空 DB fake HTTP --resume 全通过；Settings + 5 条 Generation low trace 验证，临时服务/DB 清理。全部自动验证 0 live。
+- 本地 `.env` 未修改，reasoning 未启用；Generation timeout=60、Judge=30。prompts/schema/business/output limits/retry 不变，没有重跑用户人工 baseline。
+- 用户下一步自行设置 `GENERATION_REASONING_EFFORT=low`、完整重启后端、核对 `/api/settings`，在 localhost:5173 执行同一 Test 1。记录 fact_count、input/output/total tokens、latency_ms、retry_count、reasoning_effort、HTTP/error；详细输入与历史 baseline 见阶段文档。不能由单次 latency 推断因果。
+
+下一会话先读 [PHASE_4_2.md](PHASE_4_2.md)，等待用户人工结果或新的阶段授权。提交 `Phase 4.2` 并确认 clean 后 STOP；没有 live、Phase 5 或其他优化授权。
+
+## Historical status — Phase 4.1
 
 **Phase 4.1 完成：角色 timeout 可配置，全部离线回归通过，唯一一次新的 synthetic Resume live 成功；已停止，没有 Phase 5。** 此状态优先于下方历史记录。
 

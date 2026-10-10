@@ -141,6 +141,17 @@ function SettingsPage({ settings }: { settings: Settings }) {
                   <dd>{model.structured_output_mode}</dd>
                 </>
               )}
+              {model.role === 'generation' && (
+                <>
+                  <dt>Reasoning effort</dt>
+                  <dd>
+                    {model.reasoning_effort
+                      ? model.reasoning_effort.charAt(0).toUpperCase() +
+                        model.reasoning_effort.slice(1)
+                      : 'Default'}
+                  </dd>
+                </>
+              )}
               <dt>请求超时（秒）</dt>
               <dd>{model.timeout_seconds}</dd>
               <dt>API Key</dt>
