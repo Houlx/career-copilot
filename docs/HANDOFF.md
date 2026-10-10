@@ -4,6 +4,8 @@
 
 ## Status
 
+**最新：Phase 3.5B 未完成，阻塞于 Step A。** 2026-10-10 核对 Jev 官方 native API 后，公开的 Noul/Choice/Score 无法直接表达现有开放文本 extraction contract。仅更新阻塞文档，未实现 mapping/CLI、未跑 benchmark，本次真实 requests=0，未重跑测试。需要开放文本/数组提取接口资料或明确调整任务分工/候选提取范围后再继续。详见 [PHASE_3_5B.md](PHASE_3_5B.md)。以下 3.5A 完成状态和 stop 指令为历史记录，本次获授权推进 3.5B，不代表已完成。未开始 Phase 4。
+
 **Phase 3.5A — Live Provider Validation 已完成。提交并确认 clean 后 STOP。未开始 3.5B 或 Phase 4。**
 
 Phase 3.5A：新增 Jev native decision adapter 与 Generation OpenAI-compatible adapter、role provider 配置、两个 diagnostic tasks、双重 live gate、一次请求 smoke、复用 trace（含 usage/provider metadata）。自动测试禁 TCP。本阶段检查全部通过：后端 153 passed（新增 42）、前端 16 passed、Ruff/format/check/build/audit（0 vulnerabilities）、两个离线 eval。本次按 Judge → Generation 顺序完成各一次真实 synthetic smoke（共 2 次，无重试）：jev-1.13.0，750.411 ms，tokens 283/21/304；glm-5.3-flash，1085.165 ms，tokens 41/63/104。两份 trace 已核对 structured output、metadata 与 secret 脱敏。本地 AI_DEBUG_PAYLOADS 已恢复 0。详情见 [PHASE_3_5A.md](PHASE_3_5A.md)。不再执行 live 请求；提交、检查 clean 后 STOP。
@@ -13,8 +15,9 @@ Phase 3.5A：新增 Jev native decision adapter 与 Generation OpenAI-compatible
 ## Read first next session
 
 1. 本文。
-2. `docs/PHASE_3_5A.md`、`docs/PHASE_3.md`、`docs/ARCHITECTURE.md`；Profile 规则见 `docs/PHASE_2.md`。
-3. 按获授权阶段定向阅读代码，不重新全仓库审计。
+2. `docs/PHASE_3_5B.md`：先解决 Step A 能力阻塞，不把 diagnostic 验证当业务 extraction 验证。
+3. `docs/PHASE_3_5A.md`、`docs/PHASE_3.md`、`docs/ARCHITECTURE.md`；Profile 规则见 `docs/PHASE_2.md`。
+4. 按获授权阶段定向阅读代码，不重新全仓库审计。
 
 未收到明确指令不要继续 Phase 4 Resume。
 

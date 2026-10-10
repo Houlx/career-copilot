@@ -53,6 +53,8 @@ Debug API 仅 development 可用，production/test 均返回 404。这不是 aut
 
 ## Provider and prompt boundary
 
+Phase 3.5B 能力核对：Jev 公开 native questions 为 Noul/Choice/Score，不能直接生成现有 ProfileFacts/JobExtraction 所需的任意文本及动态数组。业务 mapping 尚未实现；当前 Jev 仍仅 diagnostic。引入候选提取或其他生成模型会改变现有任务分工，须先明确调整范围。详见 [PHASE_3_5B.md](PHASE_3_5B.md)。
+
 Settings 在应用构造时加载一次，角色专用配置优先，共享配置回退。Node 仅接受注入的依赖，不直接读取环境变量。
 
 每个可执行 task 有 PromptSpec：版本、角色、prompt、输出上限、温度。已实现 diagnostic-v1、profile-facts-v1、profile-normalize-v1、jd-extract-v1、matching-v1，Pydantic strict 输出 schema 禁止额外字段。Judge 仅从 raw 提取事实并保留连续原文 quote；Generation 仅接收 facts，输出恰好一条 entry 对应一个 source_index，校验类型和数字保留。用户编辑有独立来源标记，不覆盖 raw/AI 版本。不扩展为工具注册驱动的流程。

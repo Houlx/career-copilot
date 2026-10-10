@@ -2,6 +2,8 @@
 
 独立的、面向个人求职的 Workflow-first AI 应用。当前完成 **Phase 3.5A：Live Provider Validation**；保留 Phase 3 Job Analysis，Jev / GLM synthetic smoke 均成功。没有复制或读取 Waku 项目代码；简历生成留待 Phase 4。
 
+Phase 3.5B 当前阻塞于 Jev 原生接口与开放文本 extraction contract 的能力差异，尚未实现业务 mapping 或执行 live benchmark；本次 live requests 为 0。证据与继续条件见 [PHASE_3_5B.md](docs/PHASE_3_5B.md)。
+
 ## 本地启动
 
 需要 Python 3.12+、[uv](https://docs.astral.sh/uv/) 和 Node.js 22.12+ / 24+（本次使用 Python 3.12、Node 24）。
