@@ -41,6 +41,16 @@ Provider default (wire field absent)
 
 Settings API 保留 role 配置，新增只读 task_policies，显式仅序列化 task name 与 reasoning policy；不返回完整 PromptSpec、正文、URL 或 secret。前端只读。角色 timeout 默认 30/30 秒、本地 60/30 秒；本地全局 reasoning override 已注释。实验及边界见 [PHASE_4_3.md](PHASE_4_3.md)。
 
+## JD requirement category contract alignment
+
+`jd-requirements-v2` 的 importance 原已明确 required/preferred，实际校验正常；category 的九值 Literal 原只存在于 Pydantic schema，未在 prompt 列举。用户 trace 在 HTTP 200、JSON shape 正确的 20 条 requirements 中出现 16 个 category literal_error，importance errors=0。json_object 保证 JSON 对象输出，不保证本地 Pydantic Literal compliance；此次修复针对 category schema/prompt contract mismatch。
+
+Prompt 的 category 列表直接由现有 `ExtractedRequirement.model_fields["category"].annotation` 的 Literal 参数生成：education、experience、skill、certification、language、capability、logistics、personal_trait、other。要求 exactly one of，禁止 invent/translate/rename/synonyms/其他值。原 Pydantic schema 完全不变，仍是最终 authoritative validator；没有新增 enum、映射、归一化、repair、fallback 或业务规则改动。
+
+架构原则：当 Provider 使用 json_object 而不保证 strict json_schema 时，模型可枚举字段必须同时在 Prompt contract 和本地 Pydantic schema 中保持一致。此修复通过现有 schema 生成 prompt 列表及 deterministic 集合一致性测试防止漂移，无需重构模型层。MockTransport 验证合法 JSON 经 Pydantic 到完整 Job Analysis；未知 programming 继续严格拒绝，不保存结果。reasoning、retry、timeout、scoreability/Jev 与 structured output 配置均不由此修复改变。
+
+验证结果及既有未提交 reasoning 修改导致的工作区回归差异见 [HANDOFF.md](HANDOFF.md)。没有 live 请求；真实 JD 验收由用户重启 backend 后执行。
+
 ## State and persistence
 
 `CareerState` 当前只有 message / counter / result。节点返回部分更新，LangGraph 合并状态；不维护聊天历史，也不提前加入空业务字段。

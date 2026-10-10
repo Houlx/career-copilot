@@ -2,7 +2,22 @@
 
 更新日期：2026-10-10（Asia/Shanghai）
 
-## Current status — Phase 4.3
+## Current status — JD Requirements Category Contract Fix
+
+**`jd-requirements-v2` category prompt/schema contract alignment 完成；Agent live requests=0，没有 Phase 5。**
+
+- 用户提供的原 trace：HTTP 200、requirements=20、category literal_error=16、importance errors=0。根因：importance enum 在 prompt 中显式约束且校验正常；category enum 仅存在于 Pydantic schema，prompt 没有列举合法值。json_object 仅保证 JSON 对象输出，不保证本地 Pydantic Literal compliance，因此出现系统性 category 校验失败。
+- prompt 从 `ExtractedRequirement.model_fields["category"].annotation` 的现有 Literal 生成全部合法值：education、experience、skill、certification、language、capability、logistics、personal_trait、other。没有新增共享 enum 或修改 schema；明确禁止 invent/translate/rename/synonyms/其他值。保留原 extraction、OR/学历、无额外要求/ID、input as data、strict JSON 行为。
+- Pydantic 仍是 authoritative validator；没有 taxonomy 扩展、category mapping/normalization、post-processing repair 或 repair call。不修改 scoreability/Jev、JobRequirement、reasoning policy、retry、timeout 或 structured output 配置；本地 json_object 保持现状。
+- 新增 12 项 contract/validation/mock-provider 测试，验证 9 值与 schema 集合相等、合法 JSON → Pydantic → 完整 Job Analysis；programming 继续 literal_error、MODEL_OUTPUT_INVALID，且不保存 Job。
+- 回归：仅本次修复的隔离副本 **400 backend tests passed**；前端 **25 passed**，check/build/audit（0 vulnerabilities）、Ruff check/format、Profile 10-case、Jobs 12/8/5-case、Resume 6-case replay eval 全通过。隔离副本临时端口/空 DB fake HTTP `scripts/check_http.py --resume` 通过，临时服务/DB 已清理。所有验证 **0 live requests**。
+- 工作区在本轮开始前已有 `jd-extract-v1=low` / `jd-requirements-v2=high` 两处未提交 reasoning 修改。按用户明确选择保留在工作区，不纳入本次提交；当前工作区全量 pytest 为 **389 passed / 11 failed**，失败全部是这些既有 policy 与旧 reasoning 断言冲突。本次不改断言或 policy；隔离副本不包含这两处修改，用于验证本次提交。最终 working tree 预期仍有 prompts.py 的这两处差异，不能报告 clean。
+
+人工验证由用户执行，Agent 不调用 GLM：完整重启 backend，使用完全相同 JD，点击 Job Analysis，查看 `extract_job_requirements`。成功标准：HTTP 200、failure_stage absent、Pydantic validation success、category literal_error=0。记录 requirement count、input_tokens、output_tokens、latency_ms、reasoning_effort、retry_count、validation result。不能将离线通过当作真实 JD 已修复的 live 验收。
+
+若仍 category fail，先核对实际 prompt 已生效、prompt_version 仍为 jd-requirements-v2、旧缓存/旧进程，再判断模型是否违反明确 enum contract；不自动扩大 enum 或 repair。此次完成后 STOP；reasoning/retry 实验独立处理，不进入 Phase 5。
+
+## Historical status — Phase 4.3
 
 **Phase 4.3 完成：profile-facts-v1 唯一显式 low；task-specific → role-level fallback → provider default。0 live requests，没有 Phase 5。** 此状态优先于下方历史记录。
 
