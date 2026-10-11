@@ -239,10 +239,10 @@ Jobs reference replay：12 extraction missing/addition=0、importance/category=1
 uv sync --locked
 npm ci --prefix frontend
 cp .env.example .env
-uv run uvicorn career_copilot.main:app --host 127.0.0.1 --port 8000 --reload
-# another terminal
-npm --prefix frontend run dev
+uv run python scripts/dev.py
 ```
+
+统一命令支持 Linux/macOS，同时启动前后端并保留热更新；Ctrl+C 或任一服务退出时会清理两个服务及其子进程。独立启动命令见 README。
 
 前端 5173、后端 8000；`/profile` → 确认 → `/jobs`；Debug `/debug/runs`。默认 fake。fake Profile 原样保留为 other fact；fake JD 固定 synthetic 要求，并非实际粘贴 JD 提取；fake matching 用完整 Evidence 字面包含及组合部分支持展示 MATCH/PARTIAL/GAP，仅验证流程。
 

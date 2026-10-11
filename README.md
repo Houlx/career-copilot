@@ -18,7 +18,15 @@ npm ci --prefix frontend
 cp .env.example .env
 ```
 
-两个终端分别运行：
+在项目根目录运行一条命令，同时启动前后端（Linux/macOS）：
+
+```bash
+uv run python scripts/dev.py
+```
+
+前后端均保留热更新，日志显示在同一个终端。按 `Ctrl+C` 一起停止；任一服务退出时会自动停止另一个服务。端口被占用时会报错退出，请先关闭旧服务。
+
+也可以在两个终端分别运行：
 
 ```bash
 uv run uvicorn career_copilot.main:app --host 127.0.0.1 --port 8000 --reload
